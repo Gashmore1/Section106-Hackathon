@@ -43,7 +43,8 @@ from agents.extractor import (
 from agents.pdf_parser import format_blocks_for_llm, parse_s106_pdf
 from agents.prompts import S106_EXTRACTION_SYSTEM_PROMPT, S106_EXTRACTION_USER_TEMPLATE
 from data.geo import point_in_ring, resolve_ward
-from data.sql_tools import compute_indexed_obligation, persist_extracted_agreement
+from data.seed_db import ensure_schema_upgrades
+from data.sql_tools import compute_indexed_obligation, get_engine, persist_extracted_agreement
 from shared.schemas import (
     ExtractedAgreement,
     IndexationMethod,
@@ -301,8 +302,12 @@ def find_covenant(blocks: list, name: str) -> Optional[dict[str, Any]]:
     Find the covenant in the Landowners' obligations schedule that imposes payment
     of a defined contribution, and read its trigger from the covenant's own wording.
     """
+    # Whitespace between tokens is optional: OCR returns covenants glued together as
+    # `TopaytheAffordableHousingContribution`, and a pattern that demanded a space
+    # found nothing on every scanned deed, so nothing the model missed was recovered.
+    tokens = ["To", "pay", "the", *name.split()]
     pattern = re.compile(
-        r"To pay the\s+" + r"\s+".join(re.escape(word) for word in name.split()),
+        r"\s*".join(re.escape(word) for word in tokens),
         re.IGNORECASE,
     )
     for block in blocks:
@@ -312,14 +317,16 @@ def find_covenant(blocks: list, name: str) -> Optional[dict[str, Any]]:
             continue
         source = flat if pattern.search(flat) else block.text
         quote = " ".join(source[max(0, match.start() - 8): match.start() + 480].split())
-        lowered = source.lower()
+        # Triggers are matched with the whitespace removed for the same reason:
+        # `priortotheoccupationofanydwelling` is what a scan looks like.
+        squashed = re.sub(r"\s+", "", source).lower()
         threshold: Optional[int] = 1
-        if "prior to the commencement" in lowered:
+        if "priortothecommencement" in squashed:
             trigger, threshold = "PRIOR_TO_COMMENCEMENT", None
-        elif "prior to the occupation of any" in lowered:
+        elif "priortotheoccupationofany" in squashed:
             trigger = "PRIOR_TO_OCCUPATION"
         else:
-            nth = re.search(r"occupation of the (\d+)(?:st|nd|rd|th)", lowered)
+            nth = re.search(r"occupationofthe(\d{1,3})(?:st|nd|rd|th)", squashed)
             if nth:
                 trigger, threshold = "DWELLING_OCCUPATION_THRESHOLD", int(nth.group(1))
             else:
@@ -332,6 +339,27 @@ def find_covenant(blocks: list, name: str) -> Optional[dict[str, Any]]:
             "quote": quote[:900],
             "page_number": block.page_number,
         }
+    return None
+
+
+def find_definition_page(blocks: list, name: str) -> Optional[int]:
+    """
+    The page where the deed defines a sum, i.e. `"Open Space Contribution" means the
+    sum of £180,760.00`. Used as the evidence page when no payment covenant could be
+    located, so a scanned obligation points at a real page instead of defaulting to
+    page 1, which would send the evidence viewer to the wrong place.
+    """
+    pattern = re.compile(
+        r'["\u201c]\s*' + r"\s*".join(re.escape(word) for word in name.split()) + r'\s*["\u201d]',
+        re.IGNORECASE,
+    )
+    squashed_name = re.sub(r"\s+", "", name).lower()
+    for block in blocks:
+        squashed_text = re.sub(r"\s+", "", block.text).lower()
+        if pattern.search(block.text) or pattern.search(" ".join(block.text.split())):
+            return block.page_number
+        if squashed_name in squashed_text and "thesumof" in squashed_text:
+            return block.page_number
     return None
 
 
@@ -459,6 +487,7 @@ def repair_payload(
 
     repaired: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
+    seen_fingerprints: set[tuple[str, float]] = set()
     claimed_definitions: set[str] = set()
     for index, obl in enumerate(raw.get("obligations") or [], start=1):
         if not isinstance(obl, dict):
@@ -493,6 +522,14 @@ def repair_payload(
             )
             continue
 
+        # The model returns the same covenant twice under one deed often enough to
+        # double a council's claim, and a duplicated sum is a false shortfall.
+        fingerprint = (" ".join(title.lower().split()), round(amount, 2))
+        if fingerprint in seen_fingerprints:
+            notes.append(f"dropped '{title}': the same sum was already recorded for this deed")
+            continue
+        seen_fingerprints.add(fingerprint)
+
         name_for_category = f"{title} {obl.get('clause_reference') or ''}"
         category = categorise(name_for_category)
         if obl.get("category") != category:
@@ -514,6 +551,17 @@ def repair_payload(
                 notes.append(f"'{title}': trigger defaulted to PRIOR_TO_OCCUPATION at the first dwelling")
             if trigger == "PRIOR_TO_OCCUPATION" and not threshold:
                 threshold = 1
+
+        # Evidence page: the covenant is the best authority, then the page where the
+        # deed defines the sum, and only then the model's guess. A model-invented page
+        # number sends the evidence viewer to unrelated text, which is worse than an
+        # honest fallback.
+        evidence_page = (
+            (covenant or {}).get("page_number")
+            or find_definition_page(blocks or [], matched[0] if matched else title)
+            or obl.get("page_number")
+            or 1
+        )
 
         # obligation_id is the ledger's primary key across every deed, and the model
         # returns "OBL-001" for the first obligation of every deed it reads. Scope
@@ -542,10 +590,14 @@ def repair_payload(
                 },
                 "evidence": {
                     "clause_reference": (covenant or {}).get("clause")
-                    or str(obl.get("clause_reference") or "Landowners' obligations schedule")[:127],
+                    or (
+                        f"Definitions clause, definition of '{matched[0]}'"
+                        if matched
+                        else str(obl.get("clause_reference") or "Landowners' obligations schedule")
+                    )[:127],
                     "verbatim_quote": (covenant or {}).get("quote")
                     or str(obl.get("verbatim_quote") or title)[:4000],
-                    "page_number": int((covenant or {}).get("page_number") or obl.get("page_number") or 1),
+                    "page_number": int(evidence_page),
                     "bbox": obl.get("bbox") or None,
                 },
             }
@@ -698,10 +750,19 @@ async def ingest_deed(entry: dict[str, Any], dry_run: bool = False) -> dict[str,
     )
 
     if not dry_run:
+        # Provenance travels with the deed: which register it came from, and how the
+        # ward was decided. Without this the ledger looks like the numbers invented
+        # themselves.
+        note = " ".join(
+            part.strip()
+            for part in (entry.get("source_note"), entry.get("ward_source"))
+            if part and part.strip()
+        )
         persist_extracted_agreement(
             extracted,
             dwellings_occupied_current=0,
             document_url=entry.get("document_url", ""),
+            source_note=note[:4000],
         )
     return result
 
@@ -729,6 +790,10 @@ async def main() -> None:
     )
     args = parser.parse_args()
     use_corpus(args.corpus)
+    if not args.dry_run:
+        added = ensure_schema_upgrades(get_engine())
+        if added:
+            print(f"[ingest] schema upgraded: {', '.join(added)}")
 
     entries = load_provenance()
     if not args.all_authorities:

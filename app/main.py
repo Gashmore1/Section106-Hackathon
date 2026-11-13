@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
@@ -29,12 +30,14 @@ from data.sql_tools import (
     AgreementNotFoundError,
     fetch_all_agreements,
     generate_statutory_csv_rows,
+    get_portfolio_summary,
     get_sheffield_ward_summaries,
     national_endpoint_benchmark,
     run_deterministic_audit,
 )
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 app = FastAPI(
     title="Sheffield Section 106 & Infrastructure Levy Autonomous Auditor",
@@ -83,7 +86,9 @@ async def serve_dashboard():
     index_file = FRONTEND_DIR / "index.html"
     if not index_file.exists():
         raise HTTPException(status_code=404, detail="Frontend dashboard not found.")
-    return FileResponse(index_file)
+    # The ledger changes while the ingest runs, so a cached shell showing yesterday's
+    # ledger is worse than re-reading a 40 KB file.
+    return FileResponse(index_file, headers={"Cache-Control": "no-store"})
 
 
 @app.get("/api/health")
@@ -103,6 +108,33 @@ async def health_check():
 async def list_agreements():
     """List all Sheffield S106 agreements available in the database."""
     return fetch_all_agreements()
+
+
+@app.get("/api/portfolio")
+async def portfolio_summary():
+    """
+    Every deed the ledger holds, audited deterministically, with grand totals and a
+    ward rollup. This is what the dashboard shows as the city-wide picture, so the
+    numbers on screen are the same ones `/api/audit` produces deed by deed.
+    """
+    return get_portfolio_summary()
+
+
+@app.get("/api/ground-truth")
+async def published_ground_truth():
+    """
+    The Infrastructure Funding Statements the councils actually published, read out
+    of their own PDFs. This is the only obligation-level figure any of the three
+    South Yorkshire authorities publishes, so it is what the ledger is calibrated
+    against rather than a second opinion.
+    """
+    path = REPO_ROOT / "data" / "fixtures" / "pdfs" / "ifs" / "provenance.json"
+    if not path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="No Infrastructure Funding Statement provenance on disk.",
+        )
+    return json.loads(path.read_text())
 
 
 @app.get("/api/wards")

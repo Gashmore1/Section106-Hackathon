@@ -176,6 +176,7 @@ def persist_extracted_agreement(
     extracted: ExtractedAgreement,
     dwellings_occupied_current: Optional[int] = None,
     document_url: str = "",
+    source_note: str = "",
 ) -> None:
     """
     Upsert a live Nemotron extraction into the PostgreSQL ledger so subsequent
@@ -214,6 +215,8 @@ def persist_extracted_agreement(
             "total_dwellings_permitted": extracted.total_dwellings_permitted,
             "dwellings_occupied_current": occupied,
             "document_url": document_url or (existing["document_url"] if existing else ""),
+            "extraction_status": extracted.extraction_status,
+            "source_note": source_note or (existing["source_note"] if existing else ""),
         }
         if existing:
             conn.execute(
@@ -449,6 +452,95 @@ def run_deterministic_audit(
         total_recoverable_shortfall_gbp=round(total_recoverable_shortfall, 2),
         discrepancies=discrepancies,
     )
+
+
+def get_portfolio_summary() -> dict[str, Any]:
+    """
+    Whole-ledger rollup: every deed the ledger holds, audited with the same
+    deterministic path as a single-deed audit, plus the ward rollup.
+
+    The frontend is deliberately given finished numbers rather than raw rows. It
+    cannot add, index or infer a shortfall in JavaScript, so a figure on screen is
+    the same figure `/api/audit` produces for that deed.
+    """
+    agreements = fetch_all_agreements()
+    deeds: list[dict[str, Any]] = []
+    evidence_pages_resolved = 0
+    evidence_total = 0
+    for agr in agreements:
+        reference = agr["planning_reference"]
+        report = run_deterministic_audit(reference)
+        obligations = fetch_obligations_for_agreement(reference)
+        evidence_total += len(obligations)
+        evidence_pages_resolved += sum(
+            1 for o in obligations if (o.get("page_number") or 0) > 1
+        )
+        ward = (agr.get("ward_name") or "").strip()
+        deeds.append(
+            {
+                "planning_reference": reference,
+                "site_name": agr.get("site_name"),
+                "ward_name": ward or "Unassigned",
+                "ward_resolved": bool(ward) and ward.upper() != "UNKNOWN",
+                "developer_name": agr.get("developer_name"),
+                "agreement_date": agr.get("agreement_date"),
+                "extraction_status": agr.get("extraction_status") or "EXTRACTED",
+                "source_note": agr.get("source_note") or "",
+                "obligation_count": len(obligations),
+                "dwellings_permitted": int(agr.get("total_dwellings_permitted") or 0),
+                "dwellings_occupied": report.dwellings_occupied,
+                "base_total_gbp": report.total_base_gbp,
+                "indexed_total_gbp": report.total_indexed_gbp,
+                "received_total_gbp": report.total_received_gbp,
+                "recoverable_shortfall_gbp": report.total_recoverable_shortfall_gbp,
+                "discrepancy_count": len(report.discrepancies),
+            }
+        )
+
+    def _total(key: str) -> float:
+        return round(sum(d[key] for d in deeds), 2)
+
+    by_ward: dict[str, dict[str, Any]] = {}
+    for d in deeds:
+        row = by_ward.setdefault(
+            d["ward_name"],
+            {"ward_name": d["ward_name"], "deed_count": 0, "base_total_gbp": 0.0,
+             "indexed_total_gbp": 0.0, "recoverable_shortfall_gbp": 0.0},
+        )
+        row["deed_count"] += 1
+        for key in ("base_total_gbp", "indexed_total_gbp", "recoverable_shortfall_gbp"):
+            row[key] = round(row[key] + d[key], 2)
+
+    base = _total("base_total_gbp")
+    indexed = _total("indexed_total_gbp")
+    return {
+        "audit_date": date.today().isoformat(),
+        "deeds": sorted(deeds, key=lambda d: d["planning_reference"]),
+        "totals": {
+            "deed_count": len(deeds),
+            "deeds_with_obligations": sum(1 for d in deeds if d["obligation_count"]),
+            "obligation_count": sum(d["obligation_count"] for d in deeds),
+            "base_total_gbp": base,
+            "indexed_total_gbp": indexed,
+            "indexation_exposure_gbp": round(indexed - base, 2),
+            "received_total_gbp": _total("received_total_gbp"),
+            "recoverable_shortfall_gbp": _total("recoverable_shortfall_gbp"),
+            "deeds_ward_resolved": sum(1 for d in deeds if d["ward_resolved"]),
+            "discrepancy_count": sum(d["discrepancy_count"] for d in deeds),
+        },
+        "wards": sorted(by_ward.values(), key=lambda w: -w["indexed_total_gbp"]),
+        "data_quality": {
+            "obligations_with_evidence_page": evidence_pages_resolved,
+            "obligations_total": evidence_total,
+            "occupation_telemetry": (
+                "Occupation was recorded as 0 dwellings for every deed, so obligations are "
+                "reported as not yet triggered rather than as breaches."
+            ),
+            "unattributed_deeds": [
+                d["planning_reference"] for d in deeds if not d["ward_resolved"]
+            ],
+        },
+    }
 
 
 def get_sheffield_ward_summaries() -> list[WardSummary]:

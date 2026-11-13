@@ -70,6 +70,42 @@ class S106AgreementRecord(Base):
     total_dwellings_permitted: Mapped[int] = mapped_column(Integer, default=0)
     dwellings_occupied_current: Mapped[int] = mapped_column(Integer, default=0)
     document_url: Mapped[str] = mapped_column(String(512), default="")
+    extraction_status: Mapped[str] = mapped_column(String(32), default="EXTRACTED")
+    source_note: Mapped[str] = mapped_column(Text, default="")
+
+
+def ensure_schema_upgrades(engine) -> list[str]:
+    """
+    Add columns that later revisions of the ledger need, without dropping anything.
+
+    `init_database` drops and recreates, which is right for a seed but would destroy
+    a ledger built from real deeds. This is the additive path: idempotent, and safe
+    to run before every ingest. Returns the columns it added.
+    """
+    added: list[str] = []
+    statements = [
+        ("s106_agreements", "extraction_status", "VARCHAR(32) NOT NULL DEFAULT 'EXTRACTED'"),
+        ("s106_agreements", "source_note", "TEXT NOT NULL DEFAULT ''"),
+    ]
+    with engine.begin() as conn:
+        for table, column, definition in statements:
+            before = {
+                row[0]
+                for row in conn.execute(
+                    text(
+                        "select column_name from information_schema.columns "
+                        "where table_schema = 'public' and table_name = :t"
+                    ),
+                    {"t": table},
+                ).all()
+            }
+            if column in before:
+                continue
+            conn.execute(
+                text(f'ALTER TABLE "{table}" ADD COLUMN "{column}" {definition}')  # noqa: S608
+            )
+            added.append(f"{table}.{column}")
+    return added
 
 
 class S106ObligationRecord(Base):

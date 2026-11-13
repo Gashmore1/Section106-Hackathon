@@ -300,6 +300,38 @@
     </div>
   </section>
 
+  <!-- Ledger Portfolio: everything the ledger actually holds -->
+  <section class="px-5 pb-3 hairline border-b" style="background: var(--panel-2)">
+    <div class="panel p-4">
+      <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
+        <div>
+          <h2 class="text-sm font-semibold panel-title">
+            Ledger Portfolio — every deed read from a real signed agreement
+          </h2>
+          <p class="text-[11px] muted mt-0.5" id="portfolioSub">Reading the ledger…</p>
+        </div>
+        <div class="flex flex-wrap gap-1 justify-end" id="portfolioChips"></div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="ledger" style="min-width: 860px">
+          <thead>
+            <tr>
+              <th style="width: 30%">Deed</th>
+              <th style="width: 19%">Ward</th>
+              <th class="num">Obligations</th>
+              <th class="num">Base</th>
+              <th class="num">Indexed today</th>
+              <th class="num">Received</th>
+              <th class="num">Shortfall</th>
+            </tr>
+          </thead>
+          <tbody id="portfolioBody"></tbody>
+        </table>
+      </div>
+      <div id="groundTruthStrip" class="mt-3 pt-3 hairline border-t text-[11px] muted"></div>
+    </div>
+  </section>
+
   <!-- Workspace -->
   <main class="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-4 p-5 items-start">
     <!-- Left column -->
@@ -644,6 +676,115 @@
     /* ------------------------------------------------------------------ *
      * Data loading + rendering
      * ------------------------------------------------------------------ */
+    /* ------------------------------------------------------------------ *
+     * Ledger portfolio — whole-ledger rollup, computed in SQL, not here
+     * ------------------------------------------------------------------ */
+    const STATUS_TIP = {
+      EXTRACTED: "Obligations were read out of the deed and stored",
+      NO_OBLIGATIONS:
+        "The deed was read, but no payable obligation could be established from it. Recorded as an abstention, not as £0",
+      INGEST_FAILED: "The deed could not be read at all",
+    };
+
+    async function loadPortfolio() {
+      const sub = document.getElementById("portfolioSub");
+      try {
+        const res = await fetch("/api/portfolio");
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        renderPortfolio(await res.json());
+      } catch (err) {
+        sub.textContent = "Ledger rollup unavailable: " + err.message;
+      }
+      loadGroundTruth();
+    }
+
+    function selectPortfolioDeed(row) {
+      const ref = row.getAttribute("data-ref");
+      if (!ref) return;
+      const sel = document.getElementById("agreementSelect");
+      if (sel) sel.value = ref;
+      currentPlanningRef = ref;
+      startLiveAudit();
+      document
+        .getElementById("portfolioBody")
+        .querySelectorAll("tr.row").forEach((tr) => tr.classList.toggle("active", tr === row));
+    }
+
+    function renderPortfolio(p) {
+      const t = p.totals || {};
+      const q = p.data_quality || {};
+      document.getElementById("portfolioSub").innerHTML =
+        `${t.deed_count} deeds · ${t.obligation_count} obligations · ` +
+        `${t.deeds_ward_resolved}/${t.deed_count} attributed to a ward by point-in-polygon · ` +
+        `<span title="Obligations whose evidence points at a page other than page 1. Page 1 means the deed text did not locate the clause.">` +
+        `${q.obligations_with_evidence_page}/${q.obligations_total} evidence pages located</span>`;
+
+      document.getElementById("portfolioChips").innerHTML = [
+        `<span class="chip chip-accent" title="Nominal total of every covenant in the ledger">Agreed ${fmtGBPshort(t.base_total_gbp)}</span>`,
+        `<span class="chip chip-amber" title="The same covenants indexed to today on official ONS/BCIS tables">Indexed today ${fmtGBPshort(t.indexed_total_gbp)}</span>`,
+        `<span class="chip chip-green" title="What inflation has added since each deed was signed">Indexation +${fmtGBPshort(t.indexation_exposure_gbp)}</span>`,
+      ].join("");
+
+      const rows = (p.deeds || []).map((d) => {
+        const empty = d.obligation_count === 0;
+        const cell = (v) => empty ? "—" : fmtGBP0(v);
+        return `<tr class="row" tabindex="0" data-ref="${esc(d.planning_reference)}"
+             onclick="selectPortfolioDeed(this)"
+             onkeydown="if(event.key==='Enter')selectPortfolioDeed(this)">
+          <td>
+            <div class="font-semibold" style="font-family: ui-monospace, monospace"
+                 title="${esc(d.source_note || 'No provenance recorded for this deed')}">${esc(d.planning_reference)}</div>
+            <div class="text-[11px] muted">${esc((d.site_name || "").slice(0, 62))}</div>
+            <div class="text-[11px] faint" title="${esc(STATUS_TIP[d.extraction_status] || '')}">
+              <span class="chip ${d.extraction_status === 'EXTRACTED' ? 'chip-slate' : 'chip-amber'}">${esc(d.extraction_status || '—')}</span>${d.developer_name ? " " + esc(d.developer_name) : ""}
+            </div>
+          </td>
+          <td class="text-[12px]">${d.ward_resolved
+            ? esc(d.ward_name)
+            : `<span class="chip chip-amber" title="The register records no usable postcode, or it falls outside the Sheffield 28-ward layer. Not guessed.">Ward unresolved</span>`}</td>
+          <td class="num">${empty
+            ? `<span class="chip chip-amber" title="${esc(STATUS_TIP[d.extraction_status] || "")}">none found</span>`
+            : d.obligation_count}</td>
+          <td class="num" title="${fmtGBP(d.base_total_gbp)}">${cell(d.base_total_gbp)}</td>
+          <td class="num" title="${fmtGBP(d.indexed_total_gbp)}">${cell(d.indexed_total_gbp)}</td>
+          <td class="num" title="${fmtGBP(d.received_total_gbp)}">${cell(d.received_total_gbp)}</td>
+          <td class="num" title="${fmtGBP(d.recoverable_shortfall_gbp)}">${cell(d.recoverable_shortfall_gbp)}</td>
+        </tr>`;
+      }).join("");
+
+      const foot = `<tr style="border-top: 2px solid var(--border)">
+          <td colspan="2" class="text-[12px] font-semibold">Ledger total — ${t.deed_count} deeds</td>
+          <td class="num font-semibold">${t.obligation_count}</td>
+          <td class="num font-semibold" title="${fmtGBP(t.base_total_gbp)}">${fmtGBP0(t.base_total_gbp)}</td>
+          <td class="num font-semibold" title="${fmtGBP(t.indexed_total_gbp)}">${fmtGBP0(t.indexed_total_gbp)}</td>
+          <td class="num font-semibold" title="${fmtGBP(t.received_total_gbp)}">${fmtGBP0(t.received_total_gbp)}</td>
+          <td class="num font-semibold" title="${fmtGBP(t.recoverable_shortfall_gbp)}">${fmtGBP0(t.recoverable_shortfall_gbp)}</td>
+        </tr>`;
+      document.getElementById("portfolioBody").innerHTML = rows + foot;
+    }
+
+    async function loadGroundTruth() {
+      const strip = document.getElementById("groundTruthStrip");
+      try {
+        const res = await fetch("/api/ground-truth");
+        if (!res.ok) return;
+        const gt = await res.json();
+        const shef = (gt.statements || []).find((s) => /sheffield/i.test(s.authority || ""));
+        if (!shef) return;
+        const f = shef.figures || {};
+        strip.innerHTML =
+          `<strong>Ground truth — ${esc(shef.authority)} Infrastructure Funding Statement, ` +
+          `${esc(shef.reporting_period)}</strong>, read out of the council's own PDF: ` +
+          `${fmtGBP(f.s106_receipts_in_year_gbp)} collected in the year across ` +
+          `${f.agreements_signed_in_year} agreements signed, and ` +
+          `${fmtGBP(f.s106_balance_retained_at_year_end_gbp)} held at year end. ` +
+          `The audited ledger above covers only the deeds it can actually read, so it is a floor on that ` +
+          `${fmtGBPshort(f.s106_balance_retained_at_year_end_gbp)} balance, not a replacement for it.`;
+      } catch (err) {
+        /* ground truth is context, not core: leave the strip empty rather than show a half figure */
+      }
+    }
+
     async function loadAgreements() {
       const res = await fetch("/api/agreements");
       const agreements = await res.json();
@@ -847,6 +988,7 @@
     window.addEventListener("DOMContentLoaded", async () => {
       initThemeButton();
       const hasDeeds = await loadAgreements();
+      loadPortfolio();
       await loadWardMap();
       if (hasDeeds) startLiveAudit();
     });
