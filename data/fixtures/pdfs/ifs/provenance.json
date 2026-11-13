@@ -1,0 +1,83 @@
+{
+  "_comment": "Infrastructure Funding Statements for the South Yorkshire (S-postcode) authorities, downloaded from the councils' own websites. These are the only real, obligation-level figures Sheffield, Barnsley and Doncaster publish: none of the three publishes the developer-agreement / contribution / transaction CSVs on planning.data.gov.uk, so the IFS is the sole published ground truth for what the city actually collects and holds. Every figure below was read out of the PDF in this directory, not from a summary.",
+  "_generated": "2026-11-13",
+  "_why_this_exists": "The audited ledger can only audit deeds it can read. Sheffield publishes one deed per case at best and nothing in structured form, so the IFS is what the auditor's totals are calibrated against.",
+  "statements": [
+    {
+      "file": "sheffield_ifs_2024-2025.pdf",
+      "authority": "Sheffield City Council",
+      "authority_entity": "local-authority:SHF",
+      "organisation_entity": "294",
+      "reporting_period": "2024-04-01 to 2025-03-31",
+      "document_url": "https://www.sheffield.gov.uk/sites/default/files/2026-01/infrastructure_funding_statement_2024_to_2025.pdf",
+      "figures": {
+        "s106_receipts_in_year_gbp": 1214357.23,
+        "s106_receipts_year_on_year_change_pct": 798.5,
+        "s106_administration_collected_gbp": 3703.74,
+        "potential_future_receipts_from_agreements_signed_in_year_gbp": 352501.69,
+        "agreements_signed_in_year": 9,
+        "s106_balance_retained_at_year_end_gbp": 15325204.79,
+        "committed_to_schemes_next_five_years_gbp": 10700000.0,
+        "available_to_allocate_gbp": 4700000.0,
+        "open_space_spend_gbp": 308338.65,
+        "non_monetary_agreements": ["23/04023/FUL", "23/03815/OUT", "22/02303/OUT"]
+      },
+      "source_note": "Paragraph 4.10 receipts; 4.8 potential future receipts from 9 agreements; 4.25 administration; 4.29 retained balance, printed in the PDF as '£15,3251,204.79' which is a typo in the published document and reads as £15,325,204.79 given the same paragraph splits it into £10.7m committed and £4.7m available. Paragraph 4.9 points at planningapps.sheffield.gov.uk as the place where the agreements themselves are published, which is what scripts/scrape_sheffield_register.py crawls.",
+      "verified": true
+    },
+    {
+      "file": "barnsley_ifs_2024-2025.pdf",
+      "authority": "Barnsley Metropolitan Borough Council",
+      "authority_entity": "local-authority:BAR",
+      "organisation_entity": "50",
+      "reporting_period": "2024-04-01 to 2025-03-31",
+      "document_url": "https://www.barnsley.gov.uk/media/uk3ioz22/annual-infrastructure-funding-statement-2024-2025.pdf",
+      "figures": {
+        "s106_cash_income_gbp": 3870293.0,
+        "s106_expenditure_gbp": 3024955.0,
+        "income_by_category_gbp": {
+          "affordable-housing": 83614,
+          "biodiversity": 358518,
+          "education": 2106902,
+          "public-open-space": 1109285,
+          "sustainable-travel": 211974
+        }
+      },
+      "source_note": "Barnsley publishes income per planning reference, not just per category, so this statement is obligation-level ground truth for an S-postcode authority that publishes nothing in the national dataset.",
+      "verified": true
+    },
+    {
+      "file": "doncaster_ifs_2024-2025.pdf",
+      "authority": "City of Doncaster Council",
+      "authority_entity": "local-authority:DON",
+      "organisation_entity": "109",
+      "reporting_period": "2024-04-01 to 2025-03-31",
+      "document_url": "https://www.doncaster.gov.uk/Documents/DocumentView/Stream/Media/Default/Planning/Documents/Policy%20Monitoring/S106%20AMR/Section%20106%20Infrastructure%20Funding%20Statement%202024%20-%2025.pdf",
+      "figures": {
+        "s106_cash_income_including_interest_gbp": 3089885.0,
+        "s106_expenditure_gbp": 3343703.0,
+        "balance_held_at_31_march_2025_gbp": 12455840.0,
+        "agreements_signed_in_year": 8,
+        "provisions_in_agreements_signed_in_year": 27,
+        "income_by_category_gbp": {
+          "affordable-housing": 34593,
+          "public-open-space": 193839,
+          "highways": 601976,
+          "education": 1166573,
+          "miscellaneous": 1092904
+        }
+      },
+      "source_note": "Tables 8 to 12b list the individual developments each receipt came from, so this is per-obligation data. Doncaster does not implement CIL, so everything here is section 106.",
+      "verified": true
+    }
+  ],
+  "_south_yorkshire_context": {
+    "sheffield_organisation_entity": "294",
+    "rotherham_organisation_entity": "271",
+    "barnsley_organisation_entity": "50",
+    "doncaster_organisation_entity": "109",
+    "south_yorkshire_mayoral_combined_authority_entity": "283",
+    "published_developer_agreement_rows_in_national_dataset": 0,
+    "note": "Sheffield, Rotherham, Barnsley, Doncaster and the South Yorkshire Mayoral Combined Authority all publish zero rows in the national developer-agreement, developer-agreement-contribution and developer-agreement-transaction datasets. No combined authority in England publishes any rows at all. The string 'Sheffield' does not appear anywhere in the three national CSVs."
+  }
+}

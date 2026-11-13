@@ -21,6 +21,11 @@ artifacts/
 !data/fixtures/pdfs/**/*.pdf
 !data/fixtures/docs/*.pdf
 
+# Deeds pulled from Sheffield's public register are ~70MB of scanned images and
+# are re-downloadable with scripts/scrape_sheffield_register.py, which records a
+# sha256 and source URL for every file in the manifest. Keep the blobs out of git.
+data/fixtures/pdfs/sheffield/*.pdf
+
 # graphify: commit the graph deliverables (graph.json / report / HTML) for shared team
 # context, but never the regenerable cache or machine-specific build state
 docs/graphify-out/cache/
