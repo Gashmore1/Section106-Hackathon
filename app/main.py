@@ -27,6 +27,7 @@ from data.sql_tools import (
     fetch_all_agreements,
     generate_statutory_csv_rows,
     get_sheffield_ward_summaries,
+    national_endpoint_benchmark,
     run_deterministic_audit,
 )
 
@@ -82,6 +83,15 @@ async def list_agreements():
 async def list_ward_summaries():
     """Return Sheffield Electoral Ward PostGIS GeoJSON polygons and S106 financial rollups."""
     return [w.model_dump(mode="json") for w in get_sheffield_ward_summaries()]
+
+
+@app.get("/api/benchmark")
+async def endpoint_publication_benchmark():
+    """
+    Sheffield's 0/3 statutory endpoint status benchmarked against every authority
+    publishing developer-contribution data to planning.data.gov.uk.
+    """
+    return national_endpoint_benchmark()
 
 
 @app.get("/api/audit/stream")

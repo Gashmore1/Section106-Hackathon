@@ -6,9 +6,11 @@ electoral wards (PostGIS polygons), and council payment ledger.
 
 from __future__ import annotations
 
+import csv
 import json
 import os
 from datetime import date, datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy import (
@@ -95,10 +97,11 @@ class S106ObligationRecord(Base):
 
 
 # ---------------------------------------------------------------------------
-# Seed Data Definitions (Used for both PostgreSQL and Offline Fallback)
+# Placeholder seed data — used only when the real open-data fixtures below are
+# absent (fresh clone without scripts/fetch_real_datasets.py having been run).
 # ---------------------------------------------------------------------------
 
-SEED_INFLATION_INDICES: list[dict[str, Any]] = [
+_PLACEHOLDER_INFLATION_INDICES: list[dict[str, Any]] = [
     # BCIS All-in Tender Price Index
     {"method": "BCIS", "effective_date": date(2020, 1, 1), "index_value": 332.0},
     {"method": "BCIS", "effective_date": date(2021, 1, 1), "index_value": 340.0},
@@ -122,7 +125,7 @@ SEED_INFLATION_INDICES: list[dict[str, Any]] = [
     {"method": "CPI", "effective_date": date(2025, 1, 1), "index_value": 135.4},
 ]
 
-SEED_SHEFFIELD_WARDS: list[dict[str, Any]] = [
+_PLACEHOLDER_WARDS: list[dict[str, Any]] = [
     {
         "ward_code": "E05010861",
         "ward_name": "City",
@@ -196,6 +199,102 @@ SEED_SHEFFIELD_WARDS: list[dict[str, Any]] = [
         },
     },
 ]
+
+# ---------------------------------------------------------------------------
+# Real open-data fixtures (fetched by scripts/fetch_real_datasets.py)
+# ---------------------------------------------------------------------------
+FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
+WARDS_BOUNDARY_FIXTURE = FIXTURES_DIR / "spatial" / "sheffield_28_wards_ons_boundaries.geojson"
+WARDS_CIL_FIXTURE = FIXTURES_DIR / "spatial" / "sheffield_wards_cil_indicators.geojson"
+INFLATION_FIXTURES: tuple[Path, ...] = (
+    FIXTURES_DIR / "inflation" / "ons_live_rpi_cpi.csv",
+    FIXTURES_DIR / "inflation" / "ons_rpi_cpi_bcis_series.csv",
+)
+
+# The CIL indicators layer carries 2022 ward names while the boundary layer uses
+# 2013 codes. The 2022 "City" ward is the same authority area as the 2013
+# "Central" ward, so indicators can be joined across the rename.
+WARD_NAME_ALIASES: dict[str, str] = {"City": "Central"}
+
+
+def load_sheffield_wards() -> list[dict[str, Any]]:
+    """
+    Load all 28 real Sheffield electoral ward boundaries from the ONS GeoJSON,
+    enriched with Sheffield Open Data Hub CIL / deprivation indicators
+    (IMD decile, green-space access, affordable-housing need) where the ward can
+    be matched by name.
+
+    Falls back to the hand-drawn placeholder rectangles if the fixture is absent,
+    so a fresh clone still renders something rather than an empty map.
+    """
+    if not WARDS_BOUNDARY_FIXTURE.exists():
+        return list(_PLACEHOLDER_WARDS)
+
+    cil_by_name: dict[str, dict[str, Any]] = {}
+    if WARDS_CIL_FIXTURE.exists():
+        for feat in json.loads(WARDS_CIL_FIXTURE.read_text())["features"]:
+            props = dict(feat.get("properties") or {})
+            raw_name = props.get("ward_name")
+            name = WARD_NAME_ALIASES.get(raw_name, raw_name)
+            props.pop("ward_code", None)
+            props.pop("ward_name", None)
+            if name:
+                cil_by_name[name] = props
+
+    wards: list[dict[str, Any]] = []
+    for feat in json.loads(WARDS_BOUNDARY_FIXTURE.read_text())["features"]:
+        props = dict(feat.get("properties") or {})
+        code = props.get("WD13CD") or props.get("WD22CD")
+        name = props.get("WD13NM") or props.get("WD22NM")
+        if not code or not name:
+            continue
+        merged = dict(props)
+        merged.update(cil_by_name.get(name, {}))
+        merged["ward_code"], merged["ward_name"] = code, name
+        wards.append(
+            {
+                "ward_code": code,
+                "ward_name": name,
+                "geojson": {**feat, "properties": merged},
+            }
+        )
+
+    return wards or list(_PLACEHOLDER_WARDS)
+
+
+def load_inflation_indices() -> list[dict[str, Any]]:
+    """
+    Load the full monthly ONS RPI / CPI series plus the BCIS All-in Tender Price
+    Index series from the fetched CSVs.
+
+    The two files overlap on a few annual dates and disagree on one value
+    (RPI 2025-01: 391.2 in the static series vs 391.7 from the live ONS API), so
+    the live API file is applied last and takes precedence.
+    """
+    merged: dict[tuple[str, date], float] = {}
+    for path in reversed(INFLATION_FIXTURES):  # first entry wins
+        if not path.exists():
+            continue
+        with path.open(newline="", encoding="utf-8") as handle:
+            for row in csv.DictReader(handle):
+                try:
+                    merged[(row["method"], date.fromisoformat(row["effective_date"]))] = float(
+                        row["index_value"]
+                    )
+                except (KeyError, ValueError):
+                    continue
+
+    if not merged:
+        return list(_PLACEHOLDER_INFLATION_INDICES)
+
+    return [
+        {"method": method, "effective_date": effective, "index_value": value}
+        for (method, effective), value in sorted(merged.items())
+    ]
+
+
+SEED_INFLATION_INDICES: list[dict[str, Any]] = load_inflation_indices()
+SEED_SHEFFIELD_WARDS: list[dict[str, Any]] = load_sheffield_wards()
 
 SEED_AGREEMENTS: list[dict[str, Any]] = [
     {
@@ -401,8 +500,10 @@ def seed_database() -> None:
         session.commit()
 
     print(
-        f"[seed_db] Successfully seeded {len(SEED_AGREEMENTS)} Sheffield S106 agreements "
-        f"and {len(SEED_OBLIGATIONS)} obligations at {datetime.now(timezone.utc).isoformat()}."
+        f"[seed_db] Successfully seeded {len(SEED_AGREEMENTS)} Sheffield S106 agreements, "
+        f"{len(SEED_OBLIGATIONS)} obligations, {len(SEED_SHEFFIELD_WARDS)} ward boundaries "
+        f"and {len(SEED_INFLATION_INDICES)} inflation index points "
+        f"at {datetime.now(timezone.utc).isoformat()}."
     )
 
 

@@ -6,10 +6,13 @@ Automatically uses PostgreSQL 16 when reachable, with seamless fallback to the c
 
 from __future__ import annotations
 
+import csv
 import json
 import logging
+from collections import Counter
 from datetime import date, datetime, timezone
-from typing import Optional
+from pathlib import Path
+from typing import Any, Optional
 
 from sqlalchemy import select
 
@@ -540,3 +543,104 @@ def generate_statutory_csv_rows() -> dict[str, list[dict]]:
         "developer-agreement-contribution": contributions_csv,
         "developer-agreement-transaction": transactions_csv,
     }
+
+
+# ---------------------------------------------------------------------------
+# National benchmark: Sheffield's 0/3 statutory endpoints vs peer authorities
+# ---------------------------------------------------------------------------
+NATIONAL_FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures" / "csv" / "national"
+SHEFFIELD_FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures" / "csv"
+SHEFFIELD_ORG_CODE = "local-authority:SHF"
+STATUTORY_ENDPOINT_DATASETS: tuple[str, ...] = (
+    "developer-agreement",
+    "developer-agreement-contribution",
+    "developer-agreement-transaction",
+)
+_BENCHMARK_CACHE: Optional[dict[str, Any]] = None
+
+
+def _summarise_dataset_csv(path: Path) -> tuple[int, set[str]]:
+    """Return (row count, distinct `organisation-entity` values) for a dataset CSV."""
+    rows = 0
+    entities: set[str] = set()
+    if not path.exists():
+        return rows, entities
+    with path.open(newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            rows += 1
+            entity = (row.get("organisation-entity") or "").strip()
+            if entity:
+                entities.add(entity)
+    return rows, entities
+
+
+def national_endpoint_benchmark(refresh: bool = False) -> dict[str, Any]:
+    """
+    Benchmark Sheffield City Council's developer-contribution open data against
+    every authority publishing to the national planning.data.gov.uk collection.
+
+    Sheffield currently publishes 0 of the 3 statutory datasets. The published
+    national extract identifies authorities only by `organisation-entity` number
+    (the `organisation` column is blank throughout the dump), so peers are
+    reported as anonymous entity numbers rather than guessed council names.
+    """
+    global _BENCHMARK_CACHE
+    if _BENCHMARK_CACHE is not None and not refresh:
+        return _BENCHMARK_CACHE
+
+    national_datasets: dict[str, dict[str, Any]] = {}
+    entities_by_dataset: dict[str, set[str]] = {}
+    all_entities: set[str] = set()
+    for dataset in STATUTORY_ENDPOINT_DATASETS:
+        rows, entities = _summarise_dataset_csv(NATIONAL_FIXTURE_DIR / f"{dataset}.csv")
+        national_datasets[dataset] = {"rows": rows, "publishing_authorities": len(entities)}
+        entities_by_dataset[dataset] = entities
+        all_entities |= entities
+
+    # Rows this audit would publish for Sheffield (generated, not yet live).
+    generated_for_sheffield = {
+        dataset: _summarise_dataset_csv(SHEFFIELD_FIXTURE_DIR / f"sheffield-{dataset}.csv")[0]
+        for dataset in STATUTORY_ENDPOINT_DATASETS
+    }
+
+    # Largest publishers by agreement volume, for the leaderboard.
+    per_entity: Counter = Counter()
+    agreement_path = NATIONAL_FIXTURE_DIR / "developer-agreement.csv"
+    if agreement_path.exists():
+        with agreement_path.open(newline="", encoding="utf-8") as handle:
+            for row in csv.DictReader(handle):
+                entity = (row.get("organisation-entity") or "").strip()
+                if entity:
+                    per_entity[entity] += 1
+
+    publishing_all_three = set.intersection(*entities_by_dataset.values()) if entities_by_dataset else set()
+
+    benchmark: dict[str, Any] = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "sheffield": {
+            "organisation_code": SHEFFIELD_ORG_CODE,
+            "statutory_datasets_live": 0,
+            "statutory_datasets_required": len(STATUTORY_ENDPOINT_DATASETS),
+            "rows_produced_by_this_audit": generated_for_sheffield,
+        },
+        "national": {
+            "datasets": national_datasets,
+            "distinct_publishing_authorities": len(all_entities),
+            "authorities_publishing_all_three": len(publishing_all_three),
+            "top_publishers_by_agreement_rows": [
+                {"organisation_entity": entity, "agreements": count}
+                for entity, count in per_entity.most_common(10)
+            ],
+        },
+    }
+    benchmark["summary"] = (
+        f"Sheffield publishes 0 of {len(STATUTORY_ENDPOINT_DATASETS)} statutory "
+        f"developer-contribution datasets, while "
+        f"{benchmark['national']['distinct_publishing_authorities']} authorities publish to the "
+        f"national collection and "
+        f"{benchmark['national']['authorities_publishing_all_three']} publish all three. "
+        f"This audit generates {sum(generated_for_sheffield.values())} rows across the three "
+        f"files, closing the gap in one pass."
+    )
+    _BENCHMARK_CACHE = benchmark
+    return benchmark
