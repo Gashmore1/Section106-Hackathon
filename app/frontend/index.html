@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sheffield S106 & Infrastructure Levy Autonomous Auditor | DGX Spark</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body {
+      background-color: #0b0f17;
+      color: #e2e8f0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .nvidia-badge {
+      background: linear-gradient(90deg, #76b900 0%, #4e8000 100%);
+    }
+    #wardMap {
+      height: 290px;
+      width: 100%;
+      border-radius: 0.5rem;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/90 px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="nvidia-badge text-xs font-bold uppercase tracking-wider text-black px-2.5 py-1 rounded">
+        DGX Spark GB10 • Air-Gapped
+      </span>
+      <div>
+        <h1 class="text-lg font-bold text-white tracking-tight">
+          Sheffield City Council — Section 106 & Infrastructure Levy Autonomous Auditor
+        </h1>
+        <p class="text-xs text-slate-400">
+          Local vLLM Structured Extraction + Deterministic ONS/BCIS Indexation + PostGIS Ward Telemetry
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 flex-wrap">
+      <select
+        id="agreementSelect"
+        class="bg-slate-800 border border-slate-700 text-sm rounded px-3 py-1.5 text-white focus:outline-none focus:border-lime-500"
+      ></select>
+      <button
+        id="runAuditBtn"
+        onclick="startLiveAudit()"
+        class="bg-lime-500 hover:bg-lime-400 text-slate-950 font-semibold text-sm px-4 py-1.5 rounded transition"
+      >
+        ▶ Run Autonomous Audit
+      </button>
+      <button
+        onclick="downloadDemandNotice()"
+        class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-100 text-xs font-medium px-3 py-1.5 rounded transition"
+      >
+        ⬇ Legal Demand Notice (.docx)
+      </button>
+      <div class="flex items-center gap-1 border-l border-slate-700 pl-2">
+        <span class="text-[11px] text-slate-400 mr-1">planning.data.gov.uk CSVs (3/3):</span>
+        <a
+          href="/api/export/csv/developer-agreement"
+          class="bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 text-[11px] px-2 py-1 rounded"
+        >1. Agreement</a>
+        <a
+          href="/api/export/csv/developer-agreement-contribution"
+          class="bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 text-[11px] px-2 py-1 rounded"
+        >2. Contribution</a>
+        <a
+          href="/api/export/csv/developer-agreement-transaction"
+          class="bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 text-[11px] px-2 py-1 rounded"
+        >3. Transaction</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- KPI Banner -->
+  <section class="grid grid-cols-2 md:grid-cols-5 gap-3 px-6 py-3 bg-slate-900/40 border-b border-slate-800">
+    <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
+      <div class="text-xs text-slate-400">Site Occupation Telemetry</div>
+      <div id="kpiOccupation" class="text-xl font-bold text-white mt-0.5">—</div>
+      <div id="kpiSiteName" class="text-[11px] text-slate-400 truncate mt-0.5">—</div>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
+      <div class="text-xs text-slate-400">Nominal Deed Base Total</div>
+      <div id="kpiBase" class="text-xl font-bold text-slate-200 mt-0.5">—</div>
+      <div class="text-[11px] text-slate-500 mt-0.5">Unindexed S106 covenant sum</div>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
+      <div class="text-xs text-slate-400">Indexed Liability (BCIS / RPI / CPI)</div>
+      <div id="kpiIndexed" class="text-xl font-bold text-amber-400 mt-0.5">—</div>
+      <div class="text-[11px] text-slate-500 mt-0.5">Deterministic SQL inflation adjustment</div>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
+      <div class="text-xs text-slate-400">Council Ledger Received</div>
+      <div id="kpiReceived" class="text-xl font-bold text-emerald-400 mt-0.5">—</div>
+      <div class="text-[11px] text-slate-500 mt-0.5">Verified bank receipts</div>
+    </div>
+    <div class="bg-red-950/40 border border-red-800/70 rounded-lg p-3">
+      <div class="text-xs text-red-300 font-medium">Recoverable Audit Shortfall</div>
+      <div id="kpiShortfall" class="text-xl font-bold text-red-400 mt-0.5">—</div>
+      <div class="text-[11px] text-red-300/70 mt-0.5">Triggered unpaid + missing indexation</div>
+    </div>
+  </section>
+
+  <!-- Split-Screen Workspace -->
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-6">
+    <!-- Left Column: PDF Evidence Viewer & Live Agent SSE Telemetry (5 cols) -->
+    <div class="lg:col-span-5 flex flex-col gap-4">
+      <!-- PDF Evidence Inspector -->
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 flex-1 flex flex-col">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+          <div>
+            <h2 class="text-sm font-semibold text-white">
+              Deed Evidence Viewer (PyMuPDF Bounding Box Trace)
+            </h2>
+            <p class="text-xs text-slate-400">
+              Click any obligation row in the ledger to inspect its verbatim S106 covenant & coordinates
+            </p>
+          </div>
+          <span id="evidencePageBadge" class="bg-slate-800 text-lime-400 border border-slate-700 text-xs px-2.5 py-1 rounded font-mono">
+            Page —
+          </span>
+        </div>
+
+        <div class="bg-slate-950 border border-slate-800 rounded p-4 flex-1 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+              <span id="evidenceClauseRef" class="font-semibold text-amber-300">Select an obligation</span>
+              <span id="evidenceBbox" class="font-mono text-[11px] text-slate-500">BBox: [—, —, —, —]</span>
+            </div>
+            <blockquote
+              id="evidenceQuote"
+              class="border-l-4 border-lime-500 bg-lime-950/20 text-slate-100 p-3 rounded-r text-sm leading-relaxed italic"
+            >
+              Select an obligation from the Financial Audit Ledger to highlight the exact legal covenant extracted from the Section 106 deed.
+            </blockquote>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+            <span id="evidenceFinding" class="text-slate-300"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live LangGraph SSE Telemetry -->
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-semibold text-white">Live LangGraph Agent Telemetry (SSE)</h2>
+          <span id="sseStatusBadge" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-300">Idle</span>
+        </div>
+        <div
+          id="telemetryLog"
+          class="bg-slate-950 border border-slate-800 rounded p-3 h-44 overflow-y-auto font-mono text-xs space-y-1.5"
+        ></div>
+      </div>
+    </div>
+
+    <!-- Right Column: Financial Audit Ledger & PostGIS Sheffield Ward Map (7 cols) -->
+    <div class="lg:col-span-7 flex flex-col gap-4">
+      <!-- Financial Audit Ledger -->
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h2 class="text-sm font-semibold text-white">Financial Audit Ledger (Deterministic SQL Math)</h2>
+            <p class="text-xs text-slate-400">
+              Compares deed triggers, ONS/BCIS indexation multipliers, and Sheffield City Council bank receipts
+            </p>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400 uppercase tracking-wider text-[11px]">
+                <th class="py-2 px-2">Obligation</th>
+                <th class="py-2 px-2">Trigger</th>
+                <th class="py-2 px-2">Base (£)</th>
+                <th class="py-2 px-2">Indexed (£)</th>
+                <th class="py-2 px-2">Received (£)</th>
+                <th class="py-2 px-2">Shortfall (£)</th>
+                <th class="py-2 px-2">Status</th>
+              </tr>
+            </thead>
+            <tbody id="ledgerTableBody" class="divide-y divide-slate-800/70"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PostGIS Sheffield Electoral Ward Map -->
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 flex-1 flex flex-col">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h2 class="text-sm font-semibold text-white">Sheffield Electoral Ward S106 Shortfall Map (PostGIS)</h2>
+            <p class="text-xs text-slate-400">
+              Spatial aggregation of uncollected S106 contributions across Sheffield wards
+            </p>
+          </div>
+        </div>
+        <div id="wardMap" class="flex-1"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let currentPlanningRef = "21/04512/FUL";
+    let currentDiscrepancies = [];
+    let mapInstance = null;
+    let geojsonLayer = null;
+
+    function fmtGBP(val) {
+      return "£" + Number(val || 0).toLocaleString("en-GB", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    }
+
+    function statusBadge(status) {
+      const styles = {
+        TRIGGERED_UNPAID: "bg-red-950 text-red-300 border-red-700",
+        UNDERPAID_INDEXATION: "bg-amber-950 text-amber-300 border-amber-700",
+        PENDING_TRIGGER: "bg-slate-800 text-slate-300 border-slate-600",
+        COMPLIANT: "bg-emerald-950 text-emerald-300 border-emerald-700",
+      };
+      const cls = styles[status] || "bg-slate-800 text-slate-300 border-slate-700";
+      return `<span class="border px-2 py-0.5 rounded text-[10px] font-semibold ${cls}">${status}</span>`;
+    }
+
+    async function loadAgreements() {
+      const res = await fetch("/api/agreements");
+      const agreements = await res.json();
+      const sel = document.getElementById("agreementSelect");
+      sel.innerHTML = agreements
+        .map(
+          (a) =>
+            `<option value="${a.planning_reference}">${a.planning_reference} — ${a.site_name} (${a.ward_name})</option>`
+        )
+        .join("");
+      sel.addEventListener("change", (e) => {
+        currentPlanningRef = e.target.value;
+        startLiveAudit();
+      });
+    }
+
+    function selectEvidence(idx) {
+      const d = currentDiscrepancies[idx];
+      if (!d) return;
+      document.getElementById("evidencePageBadge").textContent = `Page ${d.evidence.page_number}`;
+      document.getElementById("evidenceClauseRef").textContent = `${d.obligation_id} • ${d.evidence.clause_reference}`;
+      if (d.evidence.bbox) {
+        const b = d.evidence.bbox;
+        document.getElementById("evidenceBbox").textContent = `BBox: [${b.x0}, ${b.y0}, ${b.x1}, ${b.y1}]`;
+      }
+      document.getElementById("evidenceQuote").textContent = `"${d.evidence.verbatim_quote}"`;
+      document.getElementById("evidenceFinding").textContent = d.finding_summary;
+    }
+
+    function renderAuditReport(report) {
+      currentDiscrepancies = report.discrepancies || [];
+      document.getElementById("kpiOccupation").textContent =
+        `${report.dwellings_occupied} / ${report.dwellings_permitted} Dwellings`;
+      document.getElementById("kpiSiteName").textContent =
+        `${report.site_name} (${report.ward_name} Ward)`;
+      document.getElementById("kpiBase").textContent = fmtGBP(report.total_base_gbp);
+      document.getElementById("kpiIndexed").textContent = fmtGBP(report.total_indexed_gbp);
+      document.getElementById("kpiReceived").textContent = fmtGBP(report.total_received_gbp);
+      document.getElementById("kpiShortfall").textContent = fmtGBP(
+        report.total_recoverable_shortfall_gbp
+      );
+
+      const tbody = document.getElementById("ledgerTableBody");
+      tbody.innerHTML = currentDiscrepancies
+        .map(
+          (d, idx) => `
+          <tr
+            onclick="selectEvidence(${idx})"
+            class="hover:bg-slate-800/70 cursor-pointer transition"
+          >
+            <td class="py-2.5 px-2">
+              <div class="font-semibold text-white">${d.title}</div>
+              <div class="text-[11px] text-slate-400">${d.obligation_id} • ${d.evidence.clause_reference}</div>
+            </td>
+            <td class="py-2.5 px-2 text-slate-300">
+              ${d.trigger_threshold ? d.trigger_threshold + "th Dwelling" : "On Deed"}
+            </td>
+            <td class="py-2.5 px-2 font-mono text-slate-300">${fmtGBP(d.base_amount_gbp)}</td>
+            <td class="py-2.5 px-2 font-mono text-amber-300">${fmtGBP(d.indexed_amount_gbp)}</td>
+            <td class="py-2.5 px-2 font-mono text-emerald-300">${fmtGBP(d.amount_received_gbp)}</td>
+            <td class="py-2.5 px-2 font-mono font-bold ${
+              d.shortfall_gbp > 0 ? "text-red-400" : "text-slate-400"
+            }">${fmtGBP(d.shortfall_gbp)}</td>
+            <td class="py-2.5 px-2">${statusBadge(d.status)}</td>
+          </tr>
+        `
+        )
+        .join("");
+
+      if (currentDiscrepancies.length > 0) {
+        selectEvidence(0);
+      }
+    }
+
+    async function loadWardMap() {
+      if (!mapInstance) {
+        mapInstance = L.map("wardMap").setView([53.3811, -1.488], 12);
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+          attribution: "&copy; OpenStreetMap &copy; CARTO",
+        }).addTo(mapInstance);
+      }
+
+      const res = await fetch("/api/wards");
+      const wards = await res.json();
+
+      if (geojsonLayer) {
+        mapInstance.removeLayer(geojsonLayer);
+      }
+
+      const features = wards.map((w) => {
+        const f = w.geojson;
+        f.properties = { ...w };
+        return f;
+      });
+
+      geojsonLayer = L.geoJSON(features, {
+        style: (feature) => {
+          const shortfall = feature.properties.uncollected_shortfall_gbp || 0;
+          const fillColor =
+            shortfall > 500000
+              ? "#ef4444"
+              : shortfall > 100000
+              ? "#f59e0b"
+              : "#10b981";
+          return {
+            color: "#e2e8f0",
+            weight: 1.5,
+            fillColor,
+            fillOpacity: 0.45,
+          };
+        },
+        onEachFeature: (feature, layer) => {
+          const p = feature.properties;
+          layer.bindPopup(`
+            <div style="color:#0f172a;font-size:12px;">
+              <strong>${p.ward_name} Ward (${p.ward_code})</strong><br/>
+              Agreements Audited: ${p.agreements_count}<br/>
+              Indexed Total: ${fmtGBP(p.total_indexed_gbp)}<br/>
+              Received: ${fmtGBP(p.total_received_gbp)}<br/>
+              <strong style="color:#dc2626;">Uncollected Shortfall: ${fmtGBP(p.uncollected_shortfall_gbp)}</strong>
+            </div>
+          `);
+        },
+      }).addTo(mapInstance);
+    }
+
+    function appendTelemetry(evt) {
+      const log = document.getElementById("telemetryLog");
+      const time = new Date(evt.timestamp).toLocaleTimeString();
+      const color =
+        evt.status === "COMPLETED" ? "text-lime-400" : "text-sky-400";
+      const line = document.createElement("div");
+      line.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="${color} font-semibold">[${evt.agent_node}]</span> <span class="text-slate-200">${evt.message}</span>`;
+      log.appendChild(line);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function startLiveAudit() {
+      const log = document.getElementById("telemetryLog");
+      log.innerHTML = "";
+      const badge = document.getElementById("sseStatusBadge");
+      badge.textContent = "Streaming LangGraph...";
+      badge.className = "text-[11px] px-2 py-0.5 rounded bg-lime-950 text-lime-300 border border-lime-700";
+
+      const url = `/api/audit/stream?planning_reference=${encodeURIComponent(currentPlanningRef)}`;
+      const evtSource = new EventSource(url);
+
+      evtSource.onmessage = (e) => {
+        const evt = JSON.parse(e.data);
+        appendTelemetry(evt);
+        if (evt.agent_node === "report_synthesizer" && evt.status === "COMPLETED") {
+          if (evt.payload && evt.payload.report) {
+            renderAuditReport(evt.payload.report);
+          }
+          badge.textContent = "Audit Complete";
+          evtSource.close();
+        }
+      };
+
+      evtSource.onerror = () => {
+        evtSource.close();
+        badge.textContent = "Audit Ready";
+      };
+    }
+
+    function downloadDemandNotice() {
+      window.location.href = `/api/export/demand-notice?planning_reference=${encodeURIComponent(currentPlanningRef)}`;
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      await loadAgreements();
+      await loadWardMap();
+      startLiveAudit();
+    });
+  </script>
+</body>
+</html>
