@@ -213,6 +213,8 @@
     table.ledger tr.row { border-top: 1px solid var(--border-soft); cursor: pointer; }
     table.ledger tr.row:hover, table.ledger tr.row:focus { background: var(--panel-2); outline: none; }
     table.ledger tr.row.active { background: var(--accent-soft); }
+    /* All 66 publishers is a long table: keep the column names visible while it scrolls. */
+    #ovAuthorityTable thead th { position: sticky; top: 0; background: var(--panel); z-index: 2; }
     .obl-title { font-size: 0.78rem; font-weight: 600; color: var(--text); line-height: 1.25; }
     .obl-ref {
       font-size: 0.64rem; color: var(--text-faint); margin-top: 0.15rem;
@@ -294,7 +296,7 @@
         </div>
         <div class="text-[11px] faint max-w-[38rem] text-right" id="ovCaveat"></div>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div class="panel p-4" style="border-color: var(--red); background: var(--red-soft)">
           <div class="text-[11px] uppercase tracking-wide font-medium" style="color: var(--red)">Committed, never collected</div>
           <div id="ovNotCollected" class="text-4xl font-bold mt-1 leading-tight" style="color: var(--red)">—</div>
@@ -309,13 +311,6 @@
           <div class="text-[11px] uppercase tracking-wide font-medium muted">Total committed</div>
           <div id="ovCommitted" class="text-4xl font-bold mt-1 leading-tight" style="color: var(--text)">—</div>
           <div class="text-[11px] mt-1 muted" id="ovCommittedNote">—</div>
-        </div>
-        <div class="panel p-4" style="border-color: var(--accent); background: var(--accent-soft)">
-          <div class="text-[11px] uppercase tracking-wide font-medium" style="color: var(--accent-text)">Sheffield publishes</div>
-          <div id="ovSheffield" class="text-4xl font-bold mt-1 leading-tight" style="color: var(--accent-text)">—</div>
-          <div class="text-[11px] mt-1" style="color: var(--accent-text); opacity:.85">
-            rows in the national developer-contribution dataset
-          </div>
         </div>
       </div>
     </section>
@@ -340,8 +335,8 @@
             Click a row for the definition and the source file the figure came from.
           </div>
         </div>
-        <div class="overflow-x-auto">
-          <table class="ledger" style="min-width: 900px">
+        <div class="overflow-auto max-h-[62vh]">
+          <table class="ledger" id="ovAuthorityTable" style="min-width: 900px">
             <thead>
               <tr>
                 <th style="width:26%">Authority</th>
@@ -582,6 +577,11 @@
     let currentReport = null;
     let mapInstance = null;
     let geojsonLayer = null;
+    // The audit view starts hidden, so Leaflet has no container size when the map
+    // is first built and fitBounds silently picks something absurd. The bounds are
+    // kept so the map can be fitted properly the first time it is actually seen.
+    let wardBounds = null;
+    let wardMapFitted = false;
 
     /* ------------------------------------------------------------------ *
      * Theme
@@ -812,7 +812,21 @@
       if (tO) { tO.setAttribute("aria-selected", String(isOverview)); tO.classList.toggle("btn-primary", isOverview); }
       if (tA) { tA.setAttribute("aria-selected", String(!isOverview)); tA.classList.toggle("btn-primary", !isOverview); }
       // Leaflet measures its container when it is shown, not when it is built.
-      if (!isOverview && mapInstance) setTimeout(() => mapInstance.invalidateSize(), 80);
+      if (!isOverview) setTimeout(() => fitWardMap(true), 90);
+    }
+
+    /**
+     * Show the whole of Sheffield, not whatever fragment a fit attempted while the
+     * map was inside a hidden panel.
+     */
+    function fitWardMap(force) {
+      if (!mapInstance || !wardBounds) return;
+      if (wardMapFitted && !force) return;
+      mapInstance.invalidateSize();
+      try {
+        mapInstance.fitBounds(wardBounds, { padding: [16, 16], maxZoom: 11 });
+        wardMapFitted = true;
+      } catch (e) {}
     }
 
     function fmtGBPm(value) {
@@ -870,9 +884,6 @@
         `${(h.priced_contributions || 0).toLocaleString("en-GB")} priced contributions from ` +
         `${h.publishing_authorities || 0} authorities`;
 
-      document.getElementById("ovSheffield").textContent =
-        (d.totals && d.totals.sheffield_contribution_rows === 0) ? "Nothing" :
-        String((d.totals || {}).sheffield_contribution_rows ?? "—");
       document.getElementById("ovCaveat").textContent =
         "Every figure is a sum of published rows. " +
         (d._definitions ? "Definitions: " + Object.keys(d._definitions).join(", ") + "." : "");
@@ -886,9 +897,10 @@
 
     function renderAuthorities(authorities, definitions) {
       const body = document.getElementById("ovAuthorityBody");
-      const shown = authorities.slice(0, 12);
+      const shown = authorities;
       document.getElementById("ovAuthoritySub").textContent =
-        `Top ${shown.length} of ${authorities.length} publishing authorities, by money committed and not collected`;
+        `All ${authorities.length} authorities that publish developer-contribution data, ` +
+        `ranked by money committed and not collected`;
 
       body.innerHTML = shown.map((a, i) => {
         const label = a.name || `Entity ${a.entity}`;
@@ -1292,7 +1304,13 @@
           maxZoom: 19,
         }).addTo(mapInstance);
 
-        new ResizeObserver(() => mapInstance.invalidateSize()).observe(document.getElementById("wardMap"));
+        // The audit view is hidden at boot, so the map is built with no size at all.
+        // Fit properly the first moment the panel is actually visible.
+        new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            if (entry.contentRect.width > 0) { fitWardMap(false); return; }
+          }
+        }).observe(document.getElementById("wardMap"));
       }
 
       const res = await fetch("/api/wards");
@@ -1333,7 +1351,8 @@
       const legend = document.getElementById("wardMapLegend");
       if (legend) legend.innerHTML = shortfallLegend();
 
-      try { mapInstance.fitBounds(geojsonLayer.getBounds(), { padding: [16, 16] }); } catch (e) {}
+      try { wardBounds = geojsonLayer.getBounds(); } catch (e) { wardBounds = null; }
+      fitWardMap();
       renderWardBars("wardChart", wards);
     }
 
@@ -1400,6 +1419,19 @@
       safe(loadOverview);
       await safe(loadWardMap);
       if (hasDeeds) startLiveAudit();
+
+      // `?deed=21/01102/FUL` opens straight into that deed's audit, so a finding
+      // can be sent to someone as a link.
+      const wanted = new URLSearchParams(location.search).get("deed");
+      if (wanted) {
+        const sel = document.getElementById("agreementSelect");
+        if (sel && [...sel.options].some((o) => o.value === wanted)) {
+          sel.value = wanted;
+          currentPlanningRef = wanted;
+          showView("audit");
+          startLiveAudit();
+        }
+      }
     });
   </script>
 </body>
