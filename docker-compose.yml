@@ -1,0 +1,33 @@
+# Sheffield Section 106 & Infrastructure Levy Autonomous Auditor
+# Target: NVIDIA DGX Spark (GB10, linux/arm64) — all images must be ARM64.
+#
+# Deploy on the Spark:  docker compose up -d --build
+# Connect from laptop:  ssh -L 5432:127.0.0.1:5432 spark3
+#   then: postgresql+psycopg://spark:sparkpassword@localhost:5432/sheffield_s106
+
+services:
+  db:
+    build:
+      context: ./db
+    image: s106-postgres:16-3.4-pgvector
+    container_name: s106-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: spark
+      POSTGRES_PASSWORD: sparkpassword
+      POSTGRES_DB: sheffield_s106
+    # Bound to loopback only: the whole stack runs on the Spark itself.
+    # Reach it from a laptop via SSH tunnel (see header above).
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - s106_pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spark -d sheffield_s106"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  s106_pgdata:
