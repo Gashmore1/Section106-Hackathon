@@ -17,3 +17,12 @@ artifacts/
 *.docx
 *.pdf
 !sample_*.pdf
+
+# graphify: commit the graph deliverables (graph.json / report / HTML) for shared team
+# context, but never the regenerable cache or machine-specific build state
+docs/graphify-out/cache/
+docs/graphify-out/.graphify_root
+docs/graphify-out/.graphify_build.json
+docs/graphify-out/.graphify_analysis.json
+docs/graphify-out/manifest.json
+/graphify-out/
