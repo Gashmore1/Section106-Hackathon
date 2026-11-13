@@ -856,5 +856,345 @@
     "unspent_from_gbp": 17575274.0,
     "unspent_to_gbp": 24464233.72,
     "unspent_change_pct": 39.2
+  },
+  "cil_precursor": [
+    {
+      "financial_year": "2015/16",
+      "source": {
+        "file": "CIL Annual Report 2015-16.pdf",
+        "sha256": "64be42eadbe3a9313bb48a4906813a0154161dd3fa1e423e82a9347db97d5ca1",
+        "publisher": "Sheffield City Council",
+        "document": "CIL Annual Report (published before Infrastructure Funding Statements existed)"
+      },
+      "figures": {
+        "received_in_year": {
+          "printed": "\u00a3159,096.92",
+          "value_gbp": 159096.92,
+          "columns_printed": [
+            "\u00a3127,660.04",
+            "\u00a37,954.84",
+            "\u00a323,482.04",
+            "\u00a3159,096.92"
+          ],
+          "quote": "CIL Collected 2015/16"
+        },
+        "received_to_date": {
+          "printed": "\u00a3159,096.92",
+          "value_gbp": 159096.92,
+          "columns_printed": [
+            "\u00a3127,660.04",
+            "\u00a37,954.84",
+            "\u00a323,482.04",
+            "\u00a3159,096.92"
+          ],
+          "quote": "Total CIL Collected"
+        },
+        "expenditure_to_date": {
+          "printed": "\u00a30",
+          "value_gbp": 0.0,
+          "columns_printed": [
+            "\u00a30",
+            "\u00a30",
+            "\u00a30",
+            "\u00a30"
+          ],
+          "quote": "CIL Expenditure 2015/16"
+        },
+        "paid_to_parishes": {
+          "printed": "\u00a30",
+          "value_gbp": 0.0,
+          "columns_printed": [
+            "\u00a30",
+            "\u00a30"
+          ],
+          "quote": "CIL paid to Parishes"
+        },
+        "balance_at_year_end": {
+          "printed": "\u00a3159,096.92",
+          "value_gbp": 159096.92,
+          "columns_printed": [
+            "\u00a3127,660.04",
+            "\u00a37,954.84",
+            "\u00a323,482.04",
+            "\u00a3159,096.92"
+          ],
+          "quote": "CIL receipts carried forward to 2016/17"
+        }
+      },
+      "checks": {
+        "receipts_less_spend_equals_balance": {
+          "expected": 159096.92,
+          "printed_balance": 159096.92,
+          "difference_gbp": 0.0,
+          "ties": true
+        }
+      }
+    },
+    {
+      "financial_year": "2016/17",
+      "source": {
+        "file": "Annual Report 2016-17.pdf",
+        "sha256": "d2a90357f62abf0085291de34bef59677dd2722811a273109bf2f1df00078ef6",
+        "publisher": "Sheffield City Council",
+        "document": "CIL Annual Report (published before Infrastructure Funding Statements existed)"
+      },
+      "figures": {
+        "received_in_year": {
+          "printed": "\u00a31,236,548.69",
+          "value_gbp": 1236548.69,
+          "columns_printed": [
+            "\u00a3991,140.66",
+            "\u00a361,827.43",
+            "\u00a3183,580.60",
+            "\u00a31,236,548.69"
+          ],
+          "quote": "CIL Collected 2016/17"
+        },
+        "received_to_date": {
+          "printed": "\u00a31,395,645.62",
+          "value_gbp": 1395645.62,
+          "columns_printed": [
+            "\u00a31,118,800.70",
+            "\u00a369,782.28",
+            "\u00a3207,062.64",
+            "\u00a31,395,645.62"
+          ],
+          "quote": "Total CIL Collected"
+        },
+        "expenditure_to_date": {
+          "printed": "\u00a367,963.14",
+          "value_gbp": 67963.14,
+          "columns_printed": [
+            "\u00a30",
+            "\u00a367,963.14",
+            "\u00a30",
+            "\u00a367,963.14"
+          ],
+          "quote": "CIL Expenditure 2016/17"
+        },
+        "paid_to_parishes": {
+          "printed": "\u00a3659.70",
+          "value_gbp": 659.7,
+          "columns_printed": [
+            "\u00a3659.70",
+            "\u00a3659.70"
+          ],
+          "quote": "CIL paid to Parishes"
+        },
+        "balance_at_year_end": {
+          "printed": "\u00a31,327,022.78",
+          "value_gbp": 1327022.78,
+          "columns_printed": [
+            "\u00a31,118,800.70",
+            "\u00a31,819.14",
+            "\u00a3206,402.94",
+            "\u00a31,327,022.78"
+          ],
+          "quote": "CIL receipts carried forward to 2017/18"
+        }
+      },
+      "checks": {
+        "receipts_less_spend_equals_balance": {
+          "expected": 1327022.78,
+          "printed_balance": 1327022.78,
+          "difference_gbp": 0.0,
+          "ties": true
+        }
+      }
+    },
+    {
+      "financial_year": "2017/18",
+      "source": {
+        "file": "CIL Annual Report 2017-18.pdf",
+        "sha256": "31951900d4b24db6e5f4d26e0d7b7778dcd18c6d3d14b1bc566b753e21b93f65",
+        "publisher": "Sheffield City Council",
+        "document": "CIL Annual Report (published before Infrastructure Funding Statements existed)"
+      },
+      "figures": {
+        "received_in_year": {
+          "printed": "\u00a33,634,677.16",
+          "value_gbp": 3634677.16,
+          "columns_printed": [
+            "\u00a32,909,130.33",
+            "\u00a3181,733.86",
+            "\u00a3543,812.97",
+            "\u00a33,634,677.16"
+          ],
+          "quote": "CIL Receipts 2017/18"
+        },
+        "received_to_date": {
+          "printed": "\u00a35,013,522.79",
+          "value_gbp": 5013522.79,
+          "columns_printed": [
+            "\u00a34,014,131.22",
+            "\u00a3250,676.14",
+            "\u00a3748,715.43",
+            "\u00a35,013,522.79"
+          ],
+          "quote": "Total CIL Received to 31/3/18"
+        },
+        "expenditure_to_date": {
+          "printed": "\u00a31,011,605.66",
+          "value_gbp": 1011605.66,
+          "columns_printed": [
+            "\u00a3841,169.00",
+            "\u00a3149,831.81",
+            "\u00a320,604.85",
+            "\u00a31,011,605.66"
+          ],
+          "quote": "Total CIL Expenditure to 31/3/18"
+        },
+        "balance_at_year_end": {
+          "printed": "\u00a34,001,917.13",
+          "value_gbp": 4001917.13,
+          "columns_printed": [
+            "\u00a33,172,962.22",
+            "\u00a3100,844.33",
+            "\u00a3728,110.58",
+            "\u00a34,001,917.13"
+          ],
+          "quote": "Balance - CIL Receipts minus Expenditure 31/3/18"
+        }
+      },
+      "checks": {
+        "receipts_less_spend_equals_balance": {
+          "expected": 4001917.13,
+          "printed_balance": 4001917.13,
+          "difference_gbp": 0.0,
+          "ties": true
+        }
+      }
+    },
+    {
+      "financial_year": "2018/19",
+      "source": {
+        "file": "CIL Annual Report 2018-19.pdf",
+        "sha256": "f052fedd5cfbc3d8ccd381830f32de7942df8d003e79fb8cc7075455158f1baf",
+        "publisher": "Sheffield City Council",
+        "document": "CIL Annual Report (published before Infrastructure Funding Statements existed)"
+      },
+      "figures": {
+        "received_in_year": {
+          "printed": "\u00a35,212,279.84",
+          "value_gbp": 5212279.84,
+          "columns_printed": [
+            "\u00a34,174,045.19",
+            "\u00a3260,613.99",
+            "\u00a3777,620.66",
+            "\u00a35,212,279.84"
+          ],
+          "quote": "CIL Receipts in 2018/19"
+        },
+        "received_to_date": {
+          "printed": "\u00a310,225,802.63",
+          "value_gbp": 10225802.63,
+          "columns_printed": [
+            "\u00a38,188,175.75",
+            "\u00a3511,290.14",
+            "\u00a31,526,336.74",
+            "\u00a310,225,802.63"
+          ],
+          "quote": "Total CIL Received to 31/3/19"
+        },
+        "expenditure_to_date": {
+          "printed": "\u00a32,301,133.92",
+          "value_gbp": 2301133.92,
+          "columns_printed": [
+            "\u00a32,002,363.03",
+            "\u00a3284,635.89",
+            "\u00a314,135.00",
+            "\u00a32,301,133.92"
+          ],
+          "quote": "Total CIL Expenditure to 31/3/19"
+        },
+        "balance_at_year_end": {
+          "printed": "\u00a37,924,668.71",
+          "value_gbp": 7924668.71,
+          "columns_printed": [
+            "\u00a36,185,812.72",
+            "\u00a3226,654.25",
+            "\u00a31,512,201.74",
+            "\u00a37,924,668.71"
+          ],
+          "quote": "Balance - CIL Receipts minus Expenditure 31/3/19"
+        }
+      },
+      "checks": {
+        "receipts_less_spend_equals_balance": {
+          "expected": 7924668.71,
+          "printed_balance": 7924668.71,
+          "difference_gbp": 0.0,
+          "ties": true
+        }
+      }
+    }
+  ],
+  "restatements": [
+    {
+      "figure": "CIL expenditure up to 31/3/17",
+      "first_printed_in": "2016/17",
+      "first_printed_value_gbp": 67963.14,
+      "restated_in": "2017/18",
+      "restated_value_gbp": 909791.84,
+      "uplift_gbp": 841828.7
+    },
+    {
+      "figure": "CIL expenditure up to 31/3/18",
+      "first_printed_in": "2017/18",
+      "first_printed_value_gbp": 1011605.66,
+      "restated_in": "2018/19",
+      "restated_value_gbp": 2138280.81,
+      "uplift_gbp": 1126675.15
+    }
+  ],
+  "restatement_total_gbp": 1968503.85,
+  "cross_checks": {
+    "corroborating": [
+      {
+        "id": "s106tracker",
+        "claim": "S106 received \u00a31.2m, spent \u00a34.1m, held \u00a315.3m; CIL received \u00a32.6m, spent \u00a31.6m, held \u00a39.2m, all for 2024/25",
+        "url": "https://s106tracker.co.uk/council/sheffield",
+        "verification": "read directly from the page by this repository",
+        "what_it_actually_is": "Not independent. The page attributes every figure to 'Sheffield's latest Infrastructure Funding Statement (2024/25)', and each one matches the IFS to the rounding. It is a republication. Its one useful signal: an independent extraction of the same PDF also read the misprinted balance as \u00a315.3m rather than \u00a3153m."
+      },
+      {
+        "id": "cambridge_cil_benchmark",
+        "claim": "Sheffield has collected \u00a333m of CIL in total since charging began on 15 July 2015 (rank 51); nationally 47% of all CIL ever raised was unspent by 2025 (\u00a32.2bn), against 42% up to 2023-24, implying a spend lag of just under four years",
+        "url": "https://www.landecon.cam.ac.uk/sites/default/files/2026-09/cil_research_final_report.pdf",
+        "verification": "read directly from the report PDF by this repository",
+        "why_it_matters": "Sheffield's unallocated CIL of \u00a39.2m is about 28% of its \u00a333m lifetime collections, below the 47% national figure, so on CIL at least Sheffield spends faster than the average authority. The report also warns its unspent figures come from HBF FOI data of 'doubtful value', so this is a rough benchmark, not a verdict."
+      }
+    ],
+    "cannot_corroborate": [
+      {
+        "id": "statement_of_accounts",
+        "finding": "Sheffield's audited accounts do not disclose Section 106 or CIL as a separate line, so they can neither confirm nor contradict the IFS balances",
+        "url": "https://www.sheffield.gov.uk/sites/default/files/2026-03/sheffield-city-council-audited-statement-of-accounts-2024-2025.pdf",
+        "verification": "full-text searched by this repository: 190 pages, zero occurrences of 'Section 106' or 'S106'; 'Community Infrastructure Levy' appears only in two service-variance explanations (\u00a3170k, \u00a314k) and the standard accounting-policy note",
+        "where_it_is_buried": "Developer contributions sit inside 'Capital grants and contributions credited to the CI&ES' (Note 8), which for 2024/25 is \u00a394,923k, and in the Capital Grants Unapplied Reserve, which also holds every other unapplied capital grant. Both are aggregates over all grants, so neither is a developer-contribution figure."
+      },
+      {
+        "id": "symca",
+        "finding": "The South Yorkshire Mayoral Combined Authority, the body Sheffield sits inside, publishes no developer-contribution figures at all",
+        "url": "https://www.southyorkshire-ca.gov.uk/",
+        "verification": "reported by a research pass over SYMCA's audited accounts 2022/23 to 2024/25, auditor's annual reports and capital investment programme reports; not independently re-run by this repository",
+        "why": "Combined authorities are not charging or collecting authorities for CIL, and are not a local planning authority, so they neither sign S106 deeds nor levy CIL. Sheffield's developer-contribution position is entirely a Sheffield City Council position."
+      }
+    ],
+    "unresolved": [
+      {
+        "id": "clawback_contradiction",
+        "finding": "Sheffield told an FOI requester on 31 October 2024 that it held no S106 contributions past their clawback date, then on 30 September 2026 disclosed a spreadsheet of unspent S106 contributions that had passed their expiry dates",
+        "url": "https://www.whatdotheyknow.com/request/repayment_of_s106_contributions_250",
+        "verification": "NOT VERIFIED. WhatDoTheyKnow is behind Cloudflare and returns 403 to this repository. The attachments (EIR 3286690.xlsx, Book2.xlsx, EIR 2695294.xlsx) could not be downloaded.",
+        "why_it_matters": "If the 2026 spreadsheet is not empty then money sat past the point at which it had to be offered back, which is the single strongest finding available on Sheffield's S106 practice. It needs a browser to read, so it is flagged here rather than asserted."
+      },
+      {
+        "id": "council_answer_2021",
+        "finding": "A written answer at Full Council on 8 September 2021 put unspent S106 at \u00a319.4m, of which \u00a314.7m was committed, across 234 wholly or partially unspent agreements",
+        "url": "https://democracy.sheffield.gov.uk/documents/b24463/Members%20Questions%20Wednesday%2008-Sep-2021%2014.00%20Council.pdf",
+        "verification": "NOT VERIFIED. democracy.sheffield.gov.uk returns 403 to this repository. Reported by a research pass; consistent with the IFS balance of \u00a318,958,520 at 31 March 2021, which is why it is worth chasing."
+      }
+    ]
   }
 }

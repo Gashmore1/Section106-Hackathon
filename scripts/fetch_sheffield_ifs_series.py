@@ -23,6 +23,7 @@ import hashlib
 import io
 import re
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import date
 from pathlib import Path
@@ -566,6 +567,310 @@ def build_trend(rows: list[dict[str, Any]]) -> dict[str, Any]:
     return out
 
 
+# Before the IFS existed, Sheffield published a CIL Annual Report. Different
+# document, different layout each year, CIL only (no S106). Kept separate from
+# the IFS series rather than blended into it, because the measures differ.
+CIL_PRECURSOR_SOURCES: tuple[tuple[str, str], ...] = (
+    (
+        "2015/16",
+        "https://www.sheffield.gov.uk/sites/default/files/docs/planning-and-development/cil/CIL%20Annual%20Report%202015-16.pdf",
+    ),
+    (
+        "2016/17",
+        "https://www.sheffield.gov.uk/sites/default/files/docs/planning-and-development/cil/Annual%20Report%202016-17.pdf",
+    ),
+    (
+        "2017/18",
+        "https://www.sheffield.gov.uk/sites/default/files/docs/planning-and-development/cil/CIL%20Annual%20Report%202017-18.pdf",
+    ),
+    (
+        "2018/19",
+        "https://www.sheffield.gov.uk/sites/default/files/docs/planning-and-development/cil/CIL%20Annual%20Report%202018-19.pdf",
+    ),
+)
+
+# The last money literal on an anchored line is the Total (100%) column, because
+# every one of these tables runs Strategic / Admin / Local / Total left to right.
+PRECURSOR_ANCHORS: dict[str, dict[str, str]] = {
+    "2015/16": {
+        "received_in_year": "CIL Collected 2015/16",
+        "received_to_date": "Total CIL Collected",
+        "expenditure_to_date": "CIL Expenditure 2015/16",
+        "paid_to_parishes": "CIL paid to Parishes",
+        "balance_at_year_end": "CIL receipts carried forward to 2016/17",
+    },
+    "2016/17": {
+        "received_in_year": "CIL Collected 2016/17",
+        "received_to_date": "Total CIL Collected",
+        "expenditure_to_date": "CIL Expenditure 2016/17",
+        "paid_to_parishes": "CIL paid to Parishes",
+        "balance_at_year_end": "CIL receipts carried forward to 2017/18",
+    },
+    "2017/18": {
+        "received_in_year": "CIL Receipts 2017/18",
+        "received_to_date": "Total CIL Received to 31/3/18",
+        "expenditure_to_date": "Total CIL Expenditure to 31/3/18",
+        "balance_at_year_end": "Balance - CIL Receipts minus Expenditure 31/3/18",
+    },
+    "2018/19": {
+        "received_in_year": "CIL Receipts in 2018/19",
+        "received_to_date": "Total CIL Received to 31/3/19",
+        "expenditure_to_date": "Total CIL Expenditure to 31/3/19",
+        "balance_at_year_end": "Balance - CIL Receipts minus Expenditure 31/3/19",
+    },
+}
+
+
+# A row of table cells: money literals in a row, tolerating the footnote markers
+# these reports scatter over their figures (£841,169.00**, £1,143.002).
+AMOUNT_RUN = re.compile(
+    r"(?:\s*" + AMOUNT + r"\s*(?:\*{1,3}|\d{1,2})?\s*)+", re.I
+)
+
+
+def row_amounts(flat: str, needle: str) -> list[str]:
+    """
+    The money literals on the table row that starts with `needle`.
+
+    Anchoring on the label alone is not enough: these reports also mention the
+    same phrases in narrative prose, and a prose match picks up whatever amounts
+    happen to follow. So every occurrence is tried and the one that is followed by
+    the longest unbroken run of money literals wins, which is the table row.
+    """
+    best: list[str] = []
+    # A row label can be followed by a short parenthetical before its figures
+    # ("Balance - CIL Receipts minus Expenditure 31/3/19 – (CIL Receipts
+    # Retained) £6,185,812.72 ..."), so a little preamble is allowed, but only
+    # enough of it that a prose mention still loses to the real table row.
+    row_pattern = re.compile(r"[^£]{0,40}" + AMOUNT_RUN.pattern, re.I)
+    for match in re.finditer(re.escape(needle), flat, re.I):
+        window = flat[match.end() : match.end() + 200]
+        run = row_pattern.match(window)
+        if not run:
+            continue
+        amounts = re.findall(AMOUNT, run.group(0), re.I)
+        if len(amounts) > len(best):
+            best = amounts
+        if len(amounts) >= 4:
+            break
+    return best
+
+
+def extract_cil_precursor(
+    year: str, filename: str, pdf_bytes: bytes
+) -> Optional[dict[str, Any]]:
+    """
+    Read one pre-IFS CIL Annual Report.
+
+    Each report is read from its own anchors rather than by one generic parser:
+    the four documents lay their tables out differently, and an explicit anchor
+    per document is easier to check than clever layout detection. The figure taken
+    is always the last money literal on the anchored line, which is the Total
+    (100%) column.
+    """
+    pages = page_texts(pdf_bytes)
+    flat = to_words(" ".join(text for _, text in pages))
+    anchors = PRECURSOR_ANCHORS[year]
+    record: dict[str, Any] = {
+        "financial_year": year,
+        "source": {
+            "file": filename,
+            "sha256": hashlib.sha256(pdf_bytes).hexdigest(),
+            "publisher": "Sheffield City Council",
+            "document": "CIL Annual Report (published before Infrastructure Funding Statements existed)",
+        },
+        "figures": {},
+        "checks": {},
+    }
+    for field, anchor in anchors.items():
+        needle = to_words(anchor)
+        amounts = row_amounts(flat, needle)
+        if not amounts:
+            record["checks"][f"anchor_found:{field}"] = False
+            continue
+        value, note = parse_amount(amounts[-1])
+        record["figures"][field] = {
+            "printed": amounts[-1],
+            "value_gbp": value,
+            "columns_printed": amounts,
+            "quote": needle,
+        }
+        if note:
+            record["figures"][field]["correction"] = note
+
+    received = record["figures"].get("received_to_date", {}).get("value_gbp")
+    spent = record["figures"].get("expenditure_to_date", {}).get("value_gbp")
+    parishes = record["figures"].get("paid_to_parishes", {}).get("value_gbp") or 0.0
+    balance = record["figures"].get("balance_at_year_end", {}).get("value_gbp")
+    if None not in (received, spent, balance):
+        # The two earliest reports show money passed to parishes on its own line,
+        # outside "expenditure"; the later ones fold it into expenditure instead.
+        expected = round(received - spent - parishes, 2)
+        record["checks"]["receipts_less_spend_equals_balance"] = {
+            "expected": expected,
+            "printed_balance": balance,
+            "difference_gbp": round(expected - balance, 2),
+            "ties": abs(expected - balance) < 0.01,
+        }
+    return record
+
+
+def find_restatements(precursor: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """
+    Where a report restates a cumulative figure the previous year already printed.
+
+    Sheffield's own CIL time series is not internally consistent: the amount
+    reported as "expenditure up to 31/3/<n>" went up between the report that
+    first printed it and the one that repeated it. That is the council's own
+    published history disagreeing with itself, so it is recorded rather than
+    reconciled.
+    """
+    by_year = {row["financial_year"]: row for row in precursor}
+    found: list[dict[str, Any]] = []
+    for later, earlier in (("2017/18", "2016/17"), ("2018/19", "2017/18")):
+        if later not in by_year or earlier not in by_year:
+            continue
+        # The restated figure is the "expenditure up to the end of <earlier>"
+        # line, which only appears in the later report as a comparative.
+        restated = _comparative_expenditure(by_year[later], earlier.split("/")[1])
+        original = by_year[earlier]["figures"].get("expenditure_to_date", {}).get("value_gbp")
+        if restated is None or original is None:
+            continue
+        if abs(restated - original) < 0.01:
+            continue
+        found.append(
+            {
+                "figure": f"CIL expenditure up to 31/3/{earlier.split('/')[1]}",
+                "first_printed_in": earlier,
+                "first_printed_value_gbp": original,
+                "restated_in": later,
+                "restated_value_gbp": restated,
+                "uplift_gbp": round(restated - original, 2),
+            }
+        )
+    return found
+
+
+def _comparative_expenditure(record: dict[str, Any], end_of: str) -> Optional[float]:
+    """
+    The 'CIL Expenditure up to 31/3/<end_of>' comparative printed by a later report.
+
+    The Total (100%) column is the last money literal on the row, not the first:
+    the first is the Strategic CIL column, and reading it as the total understates
+    the figure by hundreds of thousands of pounds.
+    """
+    import pymupdf
+
+    path = PDF_DIR / record["source"]["file"]
+    if not path.exists():
+        return None
+    flat = to_words(" ".join(p.get_text() for p in pymupdf.open(str(path))))
+    amounts = row_amounts(flat, to_words(f"CIL Expenditure up to 31/3/{end_of}"))
+    if not amounts:
+        return None
+    value, _ = parse_amount(amounts[-1])
+    return value
+
+
+def fetch_pdf(url: str, offline: bool) -> Optional[bytes]:
+    """Cached-first download. A cached copy is used even when the network works."""
+    filename = urllib.parse.unquote(url.rsplit("/", 1)[-1])
+    local = PDF_DIR / filename
+    if local.exists():
+        return local.read_bytes()
+    if offline:
+        return None
+    try:
+        pdf_bytes = download(url)
+    except (urllib.error.URLError, RuntimeError, TimeoutError):
+        return None
+    local.write_bytes(pdf_bytes)
+    return pdf_bytes
+
+
+# External figures that either corroborate Sheffield's own numbers or explain why
+# a place you would expect to find them does not have them. Each one says how it
+# was checked. Anything not read out of a primary document by this repository is
+# marked, and is not used in any calculation.
+CROSS_CHECKS: dict[str, Any] = {
+    "corroborating": [
+        {
+            "id": "s106tracker",
+            "claim": "S106 received £1.2m, spent £4.1m, held £15.3m; CIL received £2.6m, spent £1.6m, held £9.2m, all for 2024/25",
+            "url": "https://s106tracker.co.uk/council/sheffield",
+            "verification": "read directly from the page by this repository",
+            "what_it_actually_is": (
+                "Not independent. The page attributes every figure to 'Sheffield's "
+                "latest Infrastructure Funding Statement (2024/25)', and each one "
+                "matches the IFS to the rounding. It is a republication. Its one "
+                "useful signal: an independent extraction of the same PDF also read "
+                "the misprinted balance as £15.3m rather than £153m."
+            ),
+        },
+        {
+            "id": "cambridge_cil_benchmark",
+            "claim": "Sheffield has collected £33m of CIL in total since charging began on 15 July 2015 (rank 51); nationally 47% of all CIL ever raised was unspent by 2025 (£2.2bn), against 42% up to 2023-24, implying a spend lag of just under four years",
+            "url": "https://www.landecon.cam.ac.uk/sites/default/files/2026-09/cil_research_final_report.pdf",
+            "verification": "read directly from the report PDF by this repository",
+            "why_it_matters": (
+                "Sheffield's unallocated CIL of £9.2m is about 28% of its £33m "
+                "lifetime collections, below the 47% national figure, so on CIL at "
+                "least Sheffield spends faster than the average authority. The "
+                "report also warns its unspent figures come from HBF FOI data of "
+                "'doubtful value', so this is a rough benchmark, not a verdict."
+            ),
+        },
+    ],
+    "cannot_corroborate": [
+        {
+            "id": "statement_of_accounts",
+            "finding": "Sheffield's audited accounts do not disclose Section 106 or CIL as a separate line, so they can neither confirm nor contradict the IFS balances",
+            "url": "https://www.sheffield.gov.uk/sites/default/files/2026-03/sheffield-city-council-audited-statement-of-accounts-2024-2025.pdf",
+            "verification": "full-text searched by this repository: 190 pages, zero occurrences of 'Section 106' or 'S106'; 'Community Infrastructure Levy' appears only in two service-variance explanations (£170k, £14k) and the standard accounting-policy note",
+            "where_it_is_buried": (
+                "Developer contributions sit inside 'Capital grants and contributions "
+                "credited to the CI&ES' (Note 8), which for 2024/25 is £94,923k, and "
+                "in the Capital Grants Unapplied Reserve, which also holds every "
+                "other unapplied capital grant. Both are aggregates over all grants, "
+                "so neither is a developer-contribution figure."
+            ),
+        },
+        {
+            "id": "symca",
+            "finding": "The South Yorkshire Mayoral Combined Authority, the body Sheffield sits inside, publishes no developer-contribution figures at all",
+            "url": "https://www.southyorkshire-ca.gov.uk/",
+            "verification": "reported by a research pass over SYMCA's audited accounts 2022/23 to 2024/25, auditor's annual reports and capital investment programme reports; not independently re-run by this repository",
+            "why": (
+                "Combined authorities are not charging or collecting authorities for "
+                "CIL, and are not a local planning authority, so they neither sign "
+                "S106 deeds nor levy CIL. Sheffield's developer-contribution "
+                "position is entirely a Sheffield City Council position."
+            ),
+        },
+    ],
+    "unresolved": [
+        {
+            "id": "clawback_contradiction",
+            "finding": "Sheffield told an FOI requester on 31 October 2024 that it held no S106 contributions past their clawback date, then on 30 September 2026 disclosed a spreadsheet of unspent S106 contributions that had passed their expiry dates",
+            "url": "https://www.whatdotheyknow.com/request/repayment_of_s106_contributions_250",
+            "verification": "NOT VERIFIED. WhatDoTheyKnow is behind Cloudflare and returns 403 to this repository. The attachments (EIR 3286690.xlsx, Book2.xlsx, EIR 2695294.xlsx) could not be downloaded.",
+            "why_it_matters": (
+                "If the 2026 spreadsheet is not empty then money sat past the point "
+                "at which it had to be offered back, which is the single strongest "
+                "finding available on Sheffield's S106 practice. It needs a browser "
+                "to read, so it is flagged here rather than asserted."
+            ),
+        },
+        {
+            "id": "council_answer_2021",
+            "finding": "A written answer at Full Council on 8 September 2021 put unspent S106 at £19.4m, of which £14.7m was committed, across 234 wholly or partially unspent agreements",
+            "url": "https://democracy.sheffield.gov.uk/documents/b24463/Members%20Questions%20Wednesday%2008-Sep-2021%2014.00%20Council.pdf",
+            "verification": "NOT VERIFIED. democracy.sheffield.gov.uk returns 403 to this repository. Reported by a research pass; consistent with the IFS balance of £18,958,520 at 31 March 2021, which is why it is worth chasing.",
+        },
+    ],
+}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="print instead of writing")
@@ -614,6 +919,31 @@ def main() -> int:
             flags += f" [{len(record['corrections'])} correction(s)]"
         print(f"  + {year} ({origin}) {len(record['figures'])} figures{flags}")
 
+    precursor: list[dict[str, Any]] = []
+    for year, url in CIL_PRECURSOR_SOURCES:
+        pdf_bytes = fetch_pdf(url, args.offline)
+        if not pdf_bytes:
+            print(f"  ! CIL report {year}: unavailable, skipping")
+            continue
+        try:
+            record = extract_cil_precursor(year, urllib.parse.unquote(url.rsplit("/", 1)[-1]), pdf_bytes)
+        except AmountError as exc:
+            print(f"  ! CIL report {year}: unreadable figure — {exc}")
+            continue
+        if record:
+            precursor.append(record)
+            tied = record["checks"].get("receipts_less_spend_equals_balance", {})
+            flag = "" if tied.get("ties", True) else " [DOES NOT TIE]"
+            print(f"  + CIL annual report {year}: balance {record['figures'].get('balance_at_year_end', {}).get('value_gbp')}{flag}")
+
+    restatements = find_restatements(precursor)
+    for item in restatements:
+        print(
+            f"  ! restatement: {item['figure']} went from "
+            f"£{item['first_printed_value_gbp']:,.2f} to £{item['restated_value_gbp']:,.2f} "
+            f"(+£{item['uplift_gbp']:,.2f})"
+        )
+
     series_rows = build_series(years)
     out = {
         "_comment": (
@@ -647,6 +977,10 @@ def main() -> int:
         "years": years,
         "series": series_rows,
         "trend": build_trend(series_rows),
+        "cil_precursor": precursor,
+        "restatements": restatements,
+        "restatement_total_gbp": round(sum(r["uplift_gbp"] for r in restatements), 2),
+        "cross_checks": CROSS_CHECKS,
     }
 
     print()

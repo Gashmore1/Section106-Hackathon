@@ -398,6 +398,24 @@
           </table>
         </div>
         <div id="ovShefCaveats" class="mt-3 pt-3 hairline border-t text-[11px] muted"></div>
+        <div id="ovShefPreIfs" class="mt-3 pt-3 hairline border-t" hidden>
+          <h3 class="text-xs font-semibold panel-title mb-1">Before the IFS existed, CIL only</h3>
+          <div class="overflow-x-auto">
+            <table class="ledger" style="min-width: 620px">
+              <thead>
+                <tr>
+                  <th style="width:14%">Financial year</th>
+                  <th class="num">CIL received in year</th>
+                  <th class="num">Received since the levy began</th>
+                  <th class="num">Spent since the levy began</th>
+                  <th class="num">Balance at 31 March</th>
+                </tr>
+              </thead>
+              <tbody id="ovShefPreIfsBody"></tbody>
+            </table>
+          </div>
+          <div id="ovShefRestatements" class="mt-2 text-[11px] muted"></div>
+        </div>
       </div>
     </section>
 
@@ -995,6 +1013,34 @@
       );
       document.getElementById("ovShefCaveats").innerHTML = caveats
         .map((c) => `<div class="mt-1">• ${c}</div>`).join("");
+
+      const pre = d.cil_precursor || [];
+      if (pre.length) {
+        document.getElementById("ovShefPreIfs").hidden = false;
+        document.getElementById("ovShefPreIfsBody").innerHTML = pre.map((r) => {
+          const f = r.figures || {};
+          const v = (k) => (f[k] ? n0(f[k].value_gbp) : "—");
+          return `<tr>
+            <td>${esc(r.financial_year)}</td>
+            <td class="num">${v("received_in_year")}</td>
+            <td class="num">${v("received_to_date")}</td>
+            <td class="num">${v("expenditure_to_date")}</td>
+            <td class="num">${v("balance_at_year_end")}</td>
+          </tr>`;
+        }).join("");
+      }
+      const restated = d.restatements || [];
+      if (restated.length) {
+        document.getElementById("ovShefRestatements").innerHTML =
+          `<b>Sheffield's own CIL history does not agree with itself.</b> Each of these ` +
+          `cumulative figures was printed one way, then printed larger a year later with no ` +
+          `explanation: ${restated.map((r) =>
+            `${esc(r.figure)} went from ${fmtGBP0(r.first_printed_value_gbp)} in ` +
+            `${esc(r.first_printed_in)} to ${fmtGBP0(r.restated_value_gbp)} in ${esc(r.restated_in)}`
+          ).join("; ")}. That is ${fmtGBP0(d.restatement_total_gbp)} of extra spending ` +
+          `appearing after the fact, which means the balances in the table above are each ` +
+          `correct against their own document but not comparable down the years.`;
+      }
     }
 
     async function loadNational() {
