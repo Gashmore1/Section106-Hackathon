@@ -1,118 +1,162 @@
 """
-Hackathon Evaluation Suite: Test `nemotron-3.5-lightning:30b` on 5 S106 Inputs.
+Hackathon Evaluation Suite: Test `nemotron-3.5-lightning:30b` on the 5 PDF Fixtures.
 
 Per the hackathon rules:
 "Pick a model and test it on five inputs, including an ambiguous one and one where 'I don't know' is right."
 
-Run with the organiser SSH tunnel open (`ssh -N -L 127.0.0.1:11435:127.0.0.1:11434 USER@SPARK_ADDRESS`):
+Each test case runs the full Track 2 & Track 1 pipeline on an actual `.pdf` file in `data/fixtures/pdfs/`:
+1. `parse_s106_pdf(pdf_path)` — PyMuPDF (`fitz`) text block & bounding box extraction
+2. `filter_relevant_s106_blocks(blocks)` — Smart schedule/covenant filtering to fit the 8,192-token window
+3. `extract_s106_obligations_vllm(blocks=filtered_blocks)` — Local `nemotron-3.5-lightning:30b` structured extraction
+4. `run_deterministic_audit(planning_reference, extracted_agreement=result)` — Deterministic ONS/BCIS SQL math
+
+Usage (with organiser SSH tunnel open `ssh -N -L 127.0.0.1:11435:127.0.0.1:11434 USER@SPARK_ADDRESS`):
     python -m scripts.test_five_inputs
+    python -m scripts.test_five_inputs --include-real-deeds
 """
 
 from __future__ import annotations
 
+import argparse
 import asyncio
+from pathlib import Path
 from typing import Any
 
 from agents.extractor import VLLM_BASE_URL, VLLM_MODEL_NAME, extract_s106_obligations_vllm
+from agents.pdf_parser import filter_relevant_s106_blocks, parse_s106_pdf
+from data.sql_tools import run_deterministic_audit
 
-FIVE_TEST_INPUTS: list[dict[str, Any]] = [
+PDF_FIXTURES_DIR = Path(__file__).resolve().parent.parent / "data" / "fixtures" / "pdfs"
+
+FIVE_PDF_TEST_CASES: list[dict[str, Any]] = [
     {
-        "id": "INPUT-1-CLEAR-BCIS",
-        "title": "1. Clear BCIS-Indexed Affordable Housing Tranche (Kelham Riverside)",
+        "id": "INPUT-1-CLEAR-KELHAM-BCIS",
+        "title": "1. Clear Multi-Schedule Deed (Kelham Riverside — BCIS / RPI / CPI)",
+        "pdf_filename": "21-04512-FUL-S106.pdf",
+        "planning_reference": "21/04512/FUL",
         "expected_status": "EXTRACTED",
-        "raw_text": (
-            "[Page 18 | BBox (72.0, 215.0, 523.0, 295.0)] "
-            "THIS DEED is dated 1 January 2021 regarding Planning Application 21/04512/FUL at "
-            "Kelham Riverside Foundry Quarter, Walkley Ward, Sheffield (240 Permitted Dwellings) "
-            "by Hallamshire Urban Regeneration Developments Ltd. "
-            "Schedule 1, Part 2, Paragraph 4.1: The Owner covenants with the Council to pay "
-            "50% of the Affordable Housing Commuted Sum (£450,000 Index Linked in accordance "
-            "with the BCIS All-in Tender Price Index from the date of this Deed, 2021-01-01) "
-            "prior to the Occupation of the 50th Market Dwelling constructed on the Site."
-        ),
+        "expected_min_obligations": 1,
     },
     {
-        "id": "INPUT-2-CLEAR-RPI",
-        "title": "2. Clear RPI-Indexed Secondary Education Contribution",
+        "id": "INPUT-2-CLEAR-WEST-BAR-HIGHWAYS",
+        "title": "2. Clear Highways & Active Travel Deed (West Bar Gateway — BCIS)",
+        "pdf_filename": "20-01984-OUT-S106.pdf",
+        "planning_reference": "20/01984/OUT",
         "expected_status": "EXTRACTED",
-        "raw_text": (
-            "[Page 24 | BBox (72.0, 140.0, 523.0, 210.0)] "
-            "Deed dated 2021-01-01 for Application 21/04512/FUL (Kelham Riverside, Walkley Ward, "
-            "Developer: Hallamshire Urban Regeneration Developments Ltd, 240 Dwellings). "
-            "Schedule 2, Paragraph 2.1: Not to Occupy or permit the Occupation of more than "
-            "74 Dwellings (trigger at 75th Dwelling) until the Education Contribution of "
-            "£285,000 (Index Linked by RPI from 2021-01-01) has been paid in full to the Council."
-        ),
+        "expected_min_obligations": 1,
     },
     {
-        "id": "INPUT-3-CLEAR-HIGHWAYS",
-        "title": "3. Clear West Bar Highways & Active Travel Contribution",
+        "id": "INPUT-3-CLEAR-BANNER-CROSS-NHS",
+        "title": "3. Clear NHS Primary Healthcare Deed (Banner Cross Parklands — RPI)",
+        "pdf_filename": "22-03110-FUL-S106.pdf",
+        "planning_reference": "22/03110/FUL",
         "expected_status": "EXTRACTED",
-        "raw_text": (
-            "[Page 22 | BBox (72.0, 180.0, 523.0, 248.0)] "
-            "Section 106 Agreement dated 2020-01-01 for Application 20/01984/OUT at West Bar "
-            "Gateway Tower Phase 2, City Ward, Sheffield by Pennine Commercial Estates PLC "
-            "(360 Permitted Residential Units). "
-            "Schedule 2, Paragraph 5.1: The Developer shall pay the Highways & Active Travel "
-            "Contribution of £390,000 (BCIS Index Linked from 2020-01-01) prior to Occupation "
-            "of the 150th Residential Unit."
-        ),
+        "expected_min_obligations": 1,
     },
     {
         "id": "INPUT-4-AMBIGUOUS-DRAFT",
-        "title": "4. AMBIGUOUS Input: Unresolved Draft Deed with Conflicting Sums & Triggers",
+        "title": "4. AMBIGUOUS Input: Unexecuted Draft Deed with Conflicting Sums & Triggers",
+        "pdf_filename": "23-09999-FUL-DRAFT-AMBIGUOUS.pdf",
+        "planning_reference": "23/09999/FUL",
         "expected_status": "AMBIGUOUS_REQUIRES_REVIEW",
-        "raw_text": (
-            "[Page 14 | BBox (72.0, 110.0, 523.0, 260.0)] "
-            "DRAFT UNEXECUTED DEED (2023-06-01) — Application 23/09999/FUL, Hillsborough Yard, "
-            "Hillsborough Ward, Sheffield (Developer: Northern Spire Developments Ltd, 120 units). "
-            "Schedule 1, Paragraph 3.1 [TRACKED CHANGES CONFLICT]: The Owner shall pay the "
-            "Open Space Sum of [£250,000 OR £140,000 — TBC BY VIABILITY ASSESSOR] indexed by "
-            "[RPI / CPI — DELETE AS APPLICABLE] prior to Occupation of either the [30th OR 90th] "
-            "Dwelling, whereas Sub-Clause 3.1(b) states no Open Space Sum is payable if Phase 1 "
-            "is occupied first."
-        ),
+        "expected_min_obligations": 0,
     },
     {
-        "id": "INPUT-5-IDK-NO-S106",
-        "title": "5. 'I DON'T KNOW' Input: Arboricultural Tree Survey Memo (No S106 Obligations)",
+        "id": "INPUT-5-IDK-ARBORICULTURAL",
+        "title": "5. 'I DON'T KNOW' Input: Arboricultural Tree Survey PDF (No S106 Obligations)",
+        "pdf_filename": "21-04512-FUL-ARBORICULTURAL-SURVEY.pdf",
+        "planning_reference": "UNKNOWN",
         "expected_status": "INSUFFICIENT_EVIDENCE_ABSTAIN",
-        "raw_text": (
-            "[Page 1 | BBox (72.0, 90.0, 523.0, 195.0)] "
-            "SHEFFIELD CITY COUNCIL — ARBORICULTURAL SITE INSPECTION NOTE (BS 5837:2012). "
-            "Three mature English Oak specimens (T1, T2, T3) along the northern boundary fence "
-            "exhibit moderate crown dieback and require 15% deadwood pruning prior to protective "
-            "heras fencing installation. Root Protection Areas (RPAs) must not be compacted by "
-            "plant machinery. No Section 106 agreement, developer contribution, or financial "
-            "covenant is mentioned or contained in this document."
-        ),
+        "expected_min_obligations": 0,
     },
 ]
 
 
-async def run_five_input_benchmark() -> None:
-    print("=" * 88)
-    print(f"DGX Spark 5-Input S106 Benchmark | Model: {VLLM_MODEL_NAME} | Endpoint: {VLLM_BASE_URL}")
-    print("=" * 88)
+async def run_five_input_benchmark(include_real_deeds: bool = False) -> None:
+    print("=" * 92)
+    print(
+        f"DGX Spark 5-Input PDF Benchmark | Model: {VLLM_MODEL_NAME} | Endpoint: {VLLM_BASE_URL}"
+    )
+    print("=" * 92)
 
-    for item in FIVE_TEST_INPUTS:
+    passed = 0
+    for item in FIVE_PDF_TEST_CASES:
+        pdf_path = PDF_FIXTURES_DIR / item["pdf_filename"]
+        all_blocks = parse_s106_pdf(pdf_path)
+        filtered_blocks = filter_relevant_s106_blocks(all_blocks)
+
         print(f"\n>>> {item['title']}")
-        print(f"    Expected status: {item['expected_status']}")
-        result = await extract_s106_obligations_vllm(
-            raw_text=item["raw_text"],
-            planning_reference="21/04512/FUL",
+        print(
+            f"    PDF File:        {pdf_path.name} "
+            f"({len(all_blocks)} total blocks -> {len(filtered_blocks)} high-signal blocks)"
         )
-        print(f"    Actual status:   {result.extraction_status}")
+        print(f"    Expected status: {item['expected_status']}")
+
+        result = await extract_s106_obligations_vllm(
+            blocks=filtered_blocks,
+            planning_reference=item["planning_reference"],
+        )
+        status_ok = result.extraction_status == item["expected_status"]
+        if status_ok:
+            passed += 1
+
+        print(
+            f"    Actual status:   {result.extraction_status} "
+            f"[{'PASS' if status_ok else 'MISMATCH'}]"
+        )
         print(f"    Obligations:     {len(result.obligations)}")
         if result.abstention_or_ambiguity_reason:
             print(f"    Reason/Note:     {result.abstention_or_ambiguity_reason}")
+
         for obl in result.obligations:
+            bbox_str = (
+                f"Page {obl.evidence.page_number} BBox({obl.evidence.bbox.x0}, {obl.evidence.bbox.y0})"
+                if obl.evidence.bbox
+                else f"Page {obl.evidence.page_number}"
+            )
             print(
                 f"      - [{obl.obligation_id}] {obl.category.value}: "
                 f"£{obl.base_amount_gbp:,.2f} ({obl.indexation_method.value}) "
-                f"@ threshold={obl.trigger.dwelling_threshold}"
+                f"@ threshold={obl.trigger.dwelling_threshold} | {bbox_str}"
+            )
+
+        if result.extraction_status == "EXTRACTED" and result.obligations:
+            audit = run_deterministic_audit(
+                item["planning_reference"], extracted_agreement=result
+            )
+            print(
+                f"    Deterministic Audit: Base £{audit.total_base_gbp:,.2f} -> "
+                f"Indexed £{audit.total_indexed_gbp:,.2f} | "
+                f"Recoverable Shortfall: £{audit.total_recoverable_shortfall_gbp:,.2f}"
+            )
+
+    print("\n" + "=" * 92)
+    print(f"Summary: {passed}/{len(FIVE_PDF_TEST_CASES)} required benchmark inputs matched expected status.")
+    print("=" * 92)
+
+    if include_real_deeds:
+        real_dir = PDF_FIXTURES_DIR / "real"
+        real_pdfs = sorted(real_dir.glob("*.pdf"))
+        print(f"\nScanning {len(real_pdfs)} real UK S106 deeds in {real_dir}...")
+        for rpdf in real_pdfs:
+            r_blocks = parse_s106_pdf(rpdf)
+            r_filtered = filter_relevant_s106_blocks(r_blocks)
+            raw_chars = sum(len(b.text) for b in r_blocks)
+            filt_chars = sum(len(b.text) for b in r_filtered)
+            print(
+                f"  • {rpdf.name}: {len(r_blocks)} blocks ({raw_chars:,} chars) "
+                f"-> {len(r_filtered)} schedule/covenant blocks ({filt_chars:,} chars)"
             )
 
 
 if __name__ == "__main__":
-    asyncio.run(run_five_input_benchmark())
+    parser = argparse.ArgumentParser(
+        description="Run the 5-input DGX Spark S106 PDF evaluation suite."
+    )
+    parser.add_argument(
+        "--include-real-deeds",
+        action="store_true",
+        help="Also parse and filter the 5 real UK S106 PDFs in data/fixtures/pdfs/real/",
+    )
+    args = parser.parse_args()
+    asyncio.run(run_five_input_benchmark(include_real_deeds=args.include_real_deeds))

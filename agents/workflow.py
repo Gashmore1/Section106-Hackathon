@@ -16,7 +16,11 @@ from agents.extractor import (
     _is_ollama_endpoint,
     extract_s106_obligations_vllm,
 )
-from agents.pdf_parser import ParsedTextBlock, parse_s106_pdf
+from agents.pdf_parser import (
+    ParsedTextBlock,
+    filter_relevant_s106_blocks,
+    parse_s106_pdf,
+)
 from data.sql_tools import get_sheffield_ward_summaries, run_deterministic_audit
 from shared.schemas import (
     AgentTelemetryEvent,
@@ -32,6 +36,7 @@ class S106AuditState(TypedDict, total=False):
     planning_reference: str
     pdf_path: Optional[str]
     parsed_blocks: list[ParsedTextBlock]
+    filtered_blocks: list[ParsedTextBlock]
     extracted_agreement: ExtractedAgreement
     audit_report: AuditReport
     ward_summaries: list[WardSummary]
@@ -41,14 +46,27 @@ class S106AuditState(TypedDict, total=False):
 FIXTURES_PDF_DIR = Path(__file__).resolve().parent.parent / "data" / "fixtures" / "pdfs"
 
 
-def _resolve_default_pdf_path(planning_reference: str, pdf_path: Optional[str]) -> Optional[str]:
+def _resolve_default_pdf_path(
+    planning_reference: str, pdf_path: Optional[str]
+) -> Optional[str]:
     """Resolve an explicit `pdf_path` or auto-discover matching fixture PDF in `data/fixtures/pdfs/`."""
     if pdf_path:
+        p = Path(pdf_path)
+        if p.exists():
+            return str(p)
+        candidate_in_fixtures = FIXTURES_PDF_DIR / pdf_path
+        if candidate_in_fixtures.exists():
+            return str(candidate_in_fixtures)
+        candidate_in_real = FIXTURES_PDF_DIR / "real" / pdf_path
+        if candidate_in_real.exists():
+            return str(candidate_in_real)
         return pdf_path
+
     slug = planning_reference.replace("/", "-")
-    candidate = FIXTURES_PDF_DIR / f"{slug}-S106.pdf"
-    if candidate.exists():
-        return str(candidate)
+    for suffix in ("-S106.pdf", "-DRAFT-AMBIGUOUS.pdf", "-ARBORICULTURAL-SURVEY.pdf", ".pdf"):
+        candidate = FIXTURES_PDF_DIR / f"{slug}{suffix}"
+        if candidate.exists():
+            return str(candidate)
     return None
 
 
@@ -78,24 +96,29 @@ def build_s106_langgraph():
         ref = state.get("planning_reference", "21/04512/FUL")
         pdf_path = _resolve_default_pdf_path(ref, state.get("pdf_path"))
         blocks: list[ParsedTextBlock] = []
+        filtered: list[ParsedTextBlock] = []
         if pdf_path:
             try:
                 blocks = parse_s106_pdf(pdf_path)
+                filtered = filter_relevant_s106_blocks(blocks)
             except Exception:
                 blocks = []
-        return {"parsed_blocks": blocks}
+                filtered = []
+        return {"parsed_blocks": blocks, "filtered_blocks": filtered}
 
     async def node_vllm_extractor(state: S106AuditState) -> S106AuditState:
         ref = state.get("planning_reference", "21/04512/FUL")
+        blocks_to_use = state.get("filtered_blocks") or state.get("parsed_blocks")
         extracted = await extract_s106_obligations_vllm(
-            blocks=state.get("parsed_blocks"),
+            blocks=blocks_to_use,
             planning_reference=ref,
         )
         return {"extracted_agreement": extracted}
 
     async def node_sql_indexation_auditor(state: S106AuditState) -> S106AuditState:
         ref = state.get("planning_reference", "21/04512/FUL")
-        report = run_deterministic_audit(ref)
+        extracted = state.get("extracted_agreement")
+        report = run_deterministic_audit(ref, extracted_agreement=extracted)
         return {"audit_report": report}
 
     async def node_postgis_spatial_checker(state: S106AuditState) -> S106AuditState:
@@ -132,27 +155,40 @@ async def stream_audit_workflow(
     Never fabricates block counts when no PDF file is attached.
     """
     blocks: list[ParsedTextBlock] = []
-    pdf_path = _resolve_default_pdf_path(planning_reference, pdf_path)
-    if pdf_path:
+    filtered_blocks: list[ParsedTextBlock] = []
+    resolved_pdf = _resolve_default_pdf_path(planning_reference, pdf_path)
+
+    if resolved_pdf:
+        pdf_name = Path(resolved_pdf).name
         yield _make_event(
             "pdf_parser",
             "STARTED",
-            f"PyMuPDF scanning attached deed '{pdf_path}' for {planning_reference}...",
+            f"PyMuPDF scanning attached deed '{pdf_name}' for {planning_reference}...",
         )
         await asyncio.sleep(0.25)
         try:
-            blocks = parse_s106_pdf(pdf_path)
+            blocks = parse_s106_pdf(resolved_pdf)
+            filtered_blocks = filter_relevant_s106_blocks(blocks)
             yield _make_event(
                 "pdf_parser",
                 "COMPLETED",
-                f"Parsed {len(blocks)} text blocks with bounding boxes from '{pdf_path}'.",
-                payload={"blocks_parsed": len(blocks), "pdf_attached": True},
+                (
+                    f"Parsed {len(blocks)} PDF text blocks from '{pdf_name}'; "
+                    f"selected {len(filtered_blocks)} high-signal Schedule/Covenant blocks "
+                    f"to fit within the 8,192-token window."
+                ),
+                payload={
+                    "blocks_parsed": len(blocks),
+                    "blocks_selected": len(filtered_blocks),
+                    "pdf_attached": True,
+                    "pdf_filename": pdf_name,
+                },
             )
         except Exception as exc:
             yield _make_event(
                 "pdf_parser",
                 "COMPLETED",
-                f"Could not read PDF '{pdf_path}' ({exc}); 0 blocks parsed.",
+                f"Could not read PDF '{pdf_name}' ({exc}); 0 blocks parsed.",
                 payload={"blocks_parsed": 0, "pdf_attached": False},
             )
     else:
@@ -172,22 +208,28 @@ async def stream_audit_workflow(
     await asyncio.sleep(0.25)
 
     backend_label = "Ollama" if _is_ollama_endpoint(VLLM_BASE_URL) else "vLLM"
-    if blocks:
+    if filtered_blocks:
         yield _make_event(
             "vllm_extractor",
             "STARTED",
             f"Querying local {backend_label} ({VLLM_MODEL_NAME} on DGX Spark, num_ctx=8192, think=false) with schema `ExtractedAgreement`...",
         )
         extracted = await extract_s106_obligations_vllm(
-            blocks=blocks, planning_reference=planning_reference
+            blocks=filtered_blocks, planning_reference=planning_reference
+        )
+        status_note = (
+            f" ({extracted.abstention_or_ambiguity_reason})"
+            if extracted.abstention_or_ambiguity_reason
+            else ""
         )
         yield _make_event(
             "vllm_extractor",
             "COMPLETED",
-            f"Extracted {len(extracted.obligations)} S106 obligations via {VLLM_MODEL_NAME} (status={extracted.extraction_status}).",
+            f"Extracted {len(extracted.obligations)} S106 obligations via {VLLM_MODEL_NAME} [status={extracted.extraction_status}]{status_note}.",
             payload={
                 "obligations_count": len(extracted.obligations),
                 "extraction_status": extracted.extraction_status,
+                "abstention_or_ambiguity_reason": extracted.abstention_or_ambiguity_reason,
                 "source": "live_llm",
             },
         )
@@ -219,7 +261,9 @@ async def stream_audit_workflow(
         "STARTED",
         "Executing deterministic PostgreSQL ONS (RPI/CPI) & BCIS Tender Price Indexation math...",
     )
-    report = run_deterministic_audit(planning_reference)
+    report = run_deterministic_audit(
+        planning_reference, extracted_agreement=extracted
+    )
     await asyncio.sleep(0.35)
 
     breaches = [

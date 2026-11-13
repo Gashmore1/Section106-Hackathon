@@ -48,6 +48,7 @@ from shared.schemas import (
     DeveloperAgreementCSVRow,
     DeveloperAgreementContributionCSVRow,
     DeveloperAgreementTransactionCSVRow,
+    ExtractedAgreement,
     IndexationCalculationResult,
     IndexationMethod,
     WardSummary,
@@ -174,18 +175,157 @@ def fetch_obligations_for_agreement(planning_reference: str) -> list[dict]:
     ]
 
 
-def run_deterministic_audit(planning_reference: str) -> AuditReport:
+def persist_extracted_agreement(
+    extracted: ExtractedAgreement,
+    dwellings_occupied_current: Optional[int] = None,
+    document_url: str = "",
+) -> None:
     """
-    Evaluate all obligations for a planning reference against site dwelling occupation
-    telemetry and ONS/BCIS inflation indices.
+    Persist a newly extracted `ExtractedAgreement` (from live Nemotron PDF extraction)
+    into the canonical runtime ledger (and PostgreSQL when connected) so subsequent
+    audits, ward rollups, and CSV exports include it.
+    """
+    if extracted.extraction_status != "EXTRACTED" or not extracted.obligations:
+        return
+
+    existing_agr = next(
+        (
+            a
+            for a in SEED_AGREEMENTS
+            if a["planning_reference"] == extracted.planning_reference
+        ),
+        None,
+    )
+    occupied = (
+        dwellings_occupied_current
+        if dwellings_occupied_current is not None
+        else (
+            int(existing_agr["dwellings_occupied_current"])
+            if existing_agr
+            else max(1, extracted.total_dwellings_permitted // 2)
+        )
+    )
+
+    agr_dict = {
+        "planning_reference": extracted.planning_reference,
+        "agreement_date": extracted.agreement_date,
+        "site_name": extracted.site_name,
+        "ward_name": extracted.ward_name,
+        "developer_name": extracted.developer_name,
+        "total_dwellings_permitted": extracted.total_dwellings_permitted,
+        "dwellings_occupied_current": occupied,
+        "document_url": document_url
+        or (existing_agr["document_url"] if existing_agr else ""),
+    }
+    if existing_agr is None:
+        SEED_AGREEMENTS.append(agr_dict)
+
+    existing_obl_ids = {o["obligation_id"] for o in SEED_OBLIGATIONS}
+    for obl in extracted.obligations:
+        if obl.obligation_id in existing_obl_ids:
+            continue
+        SEED_OBLIGATIONS.append(
+            {
+                "obligation_id": obl.obligation_id,
+                "planning_reference": extracted.planning_reference,
+                "category": obl.category.value,
+                "title": obl.title,
+                "base_amount_gbp": obl.base_amount_gbp,
+                "indexation_method": obl.indexation_method.value,
+                "index_base_date": obl.index_base_date or extracted.agreement_date,
+                "trigger_type": obl.trigger.trigger_type.value,
+                "trigger_description": obl.trigger.description,
+                "dwelling_threshold": obl.trigger.dwelling_threshold,
+                "amount_received_gbp": 0.0,
+                "clause_reference": obl.evidence.clause_reference,
+                "verbatim_quote": obl.evidence.verbatim_quote,
+                "page_number": obl.evidence.page_number,
+                "bbox": obl.evidence.bbox.model_dump() if obl.evidence.bbox else {},
+            }
+        )
+
+
+def run_deterministic_audit(
+    planning_reference: str,
+    extracted_agreement: Optional[ExtractedAgreement] = None,
+    dwellings_occupied_override: Optional[int] = None,
+) -> AuditReport:
+    """
+    Evaluate all obligations for a planning reference (or a live `ExtractedAgreement`
+    from Nemotron) against site dwelling occupation telemetry and ONS/BCIS inflation indices.
     """
     agreements = fetch_all_agreements()
-    agr = next(
+    matched_agr = next(
         (a for a in agreements if a["planning_reference"] == planning_reference),
-        agreements[0],
+        None,
     )
-    obligations = fetch_obligations_for_agreement(agr["planning_reference"])
-    occupied = int(agr["dwellings_occupied_current"])
+
+    if (
+        extracted_agreement is not None
+        and extracted_agreement.extraction_status == "EXTRACTED"
+        and extracted_agreement.obligations
+    ):
+        persist_extracted_agreement(
+            extracted_agreement,
+            dwellings_occupied_current=dwellings_occupied_override,
+        )
+        ledger_obls_by_id = {
+            o["obligation_id"]: o
+            for o in fetch_obligations_for_agreement(
+                extracted_agreement.planning_reference
+            )
+        }
+        agr = matched_agr or {
+            "planning_reference": extracted_agreement.planning_reference,
+            "agreement_date": extracted_agreement.agreement_date,
+            "site_name": extracted_agreement.site_name,
+            "ward_name": extracted_agreement.ward_name,
+            "developer_name": extracted_agreement.developer_name,
+            "total_dwellings_permitted": extracted_agreement.total_dwellings_permitted,
+            "dwellings_occupied_current": (
+                dwellings_occupied_override
+                if dwellings_occupied_override is not None
+                else max(1, extracted_agreement.total_dwellings_permitted // 2)
+            ),
+        }
+        obligations = []
+        for obl in extracted_agreement.obligations:
+            ledger_match = ledger_obls_by_id.get(obl.obligation_id, {})
+            obligations.append(
+                {
+                    "obligation_id": obl.obligation_id,
+                    "planning_reference": extracted_agreement.planning_reference,
+                    "category": obl.category.value,
+                    "title": obl.title,
+                    "base_amount_gbp": obl.base_amount_gbp,
+                    "indexation_method": obl.indexation_method.value,
+                    "index_base_date": obl.index_base_date
+                    or extracted_agreement.agreement_date,
+                    "trigger_type": obl.trigger.trigger_type.value,
+                    "trigger_description": obl.trigger.description,
+                    "dwelling_threshold": obl.trigger.dwelling_threshold,
+                    "amount_received_gbp": float(
+                        ledger_match.get("amount_received_gbp", 0.0)
+                    ),
+                    "clause_reference": obl.evidence.clause_reference,
+                    "verbatim_quote": obl.evidence.verbatim_quote,
+                    "page_number": obl.evidence.page_number,
+                    "bbox": (
+                        obl.evidence.bbox.model_dump()
+                        if obl.evidence.bbox
+                        else ledger_match.get("bbox", {})
+                    ),
+                }
+            )
+    else:
+        agr = matched_agr or agreements[0]
+        obligations = fetch_obligations_for_agreement(agr["planning_reference"])
+
+    occupied = (
+        int(dwellings_occupied_override)
+        if dwellings_occupied_override is not None
+        else int(agr["dwellings_occupied_current"])
+    )
 
     discrepancies: list[AuditDiscrepancy] = []
     total_base = 0.0
