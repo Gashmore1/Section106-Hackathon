@@ -149,7 +149,7 @@ async def _call_vllm_openai(
 
 async def extract_s106_obligations_vllm(
     blocks: Optional[list[ParsedTextBlock]] = None,
-    planning_reference: str = "21/04512/FUL",
+    planning_reference: str = "UNKNOWN",
     raw_text: Optional[str] = None,
     model_name: Optional[str] = None,
     base_url: Optional[str] = None,
@@ -157,9 +157,10 @@ async def extract_s106_obligations_vllm(
     """
     Query the local DGX Spark LLM (`nemotron-3.5-lightning:30b` by default) with structured
     JSON schema output when `blocks` or `raw_text` are provided.
-    If no document text is provided (or if the Spark tunnel is offline during local UI dev),
-    returns the deterministic pre-extracted agreement for `planning_reference` (including
-    ambiguity and abstention detection on the parsed PDF text).
+
+    If no document text is available, or every configured local endpoint is
+    unreachable, this abstains: it returns `INSUFFICIENT_EVIDENCE_ABSTAIN` with no
+    obligations rather than replaying ledger rows as a fresh extraction.
     """
     target_model = model_name or VLLM_MODEL_NAME
     primary_url = base_url or VLLM_BASE_URL
@@ -172,7 +173,8 @@ async def extract_s106_obligations_vllm(
             {
                 "role": "user",
                 "content": S106_EXTRACTION_USER_TEMPLATE.format(
-                    document_blocks_text=doc_text
+                    document_blocks_text=doc_text,
+                    planning_reference=planning_reference,
                 ),
             },
         ]
@@ -214,11 +216,12 @@ def _build_fallback_extraction(
     planning_reference: str, doc_text: str = ""
 ) -> ExtractedAgreement:
     """
-    Construct `ExtractedAgreement` when the Spark tunnel is offline.
+    Honest abstain path used when every local Spark endpoint is unreachable.
     Handles:
     - Ambiguous draft conflict deeds (`AMBIGUOUS_REQUIRES_REVIEW`)
     - Non-S106 documents where 'I don't know' / abstention is right (`INSUFFICIENT_EVIDENCE_ABSTAIN`)
-    - Canonical Sheffield S106 seed agreements (`EXTRACTED`)
+    - No model response at all: abstain with zero obligations rather than replay
+      ledger rows as if they had just been extracted from this PDF.
     """
     lower_doc = doc_text.lower()
     if (
@@ -262,54 +265,22 @@ def _build_fallback_extraction(
             obligations=[],
         )
 
-    # Detect planning reference inside the parsed PDF text if present
+    # No local model answered. Report that honestly. Replaying whatever happens to
+    # be in the ledger would present old rows as a fresh extraction from this PDF,
+    # so we abstain with no obligations and persist nothing.
     ref_match = re.search(r"\b(\d{2}/\d{5}/(?:FUL|OUT|REM))\b", doc_text)
-    effective_ref = ref_match.group(1) if ref_match else planning_reference
-
-    agreements = fetch_all_agreements()
-    agr = next(
-        (a for a in agreements if a["planning_reference"] == effective_ref),
-        agreements[0],
-    )
-    obligations_raw = fetch_obligations_for_agreement(agr["planning_reference"])
-
-    extracted_obligations: list[ExtractedObligation] = []
-    for obl in obligations_raw:
-        bbox_dict = obl.get("bbox")
-        extracted_obligations.append(
-            ExtractedObligation(
-                obligation_id=obl["obligation_id"],
-                category=ContributionCategory(obl["category"]),
-                title=obl["title"],
-                base_amount_gbp=float(obl["base_amount_gbp"]),
-                indexation_method=IndexationMethod(obl["indexation_method"]),
-                index_base_date=obl["index_base_date"],
-                trigger=TriggerCondition(
-                    trigger_type=TriggerType(obl["trigger_type"]),
-                    description=obl["trigger_description"],
-                    dwelling_threshold=obl.get("dwelling_threshold"),
-                    prior_to_event=obl["trigger_description"],
-                ),
-                evidence=ClauseEvidence(
-                    clause_reference=obl["clause_reference"],
-                    verbatim_quote=obl["verbatim_quote"],
-                    page_number=int(obl["page_number"]),
-                    bbox=BoundingBox(**bbox_dict) if bbox_dict else None,
-                ),
-            )
-        )
-
-    agr_date = agr["agreement_date"]
-    if isinstance(agr_date, str):
-        agr_date = date.fromisoformat(agr_date)
-
     return ExtractedAgreement(
-        planning_reference=agr["planning_reference"],
-        agreement_date=agr_date,
-        site_name=agr["site_name"],
-        ward_name=agr["ward_name"],
-        developer_name=agr["developer_name"],
-        total_dwellings_permitted=int(agr["total_dwellings_permitted"]),
-        extraction_status="EXTRACTED",
-        obligations=extracted_obligations,
+        planning_reference=ref_match.group(1) if ref_match else planning_reference,
+        agreement_date=date.min,  # sentinel: the deed could not be read
+        site_name="Unknown (no model response)",
+        ward_name="Unknown",
+        developer_name="Unknown",
+        total_dwellings_permitted=0,
+        extraction_status="INSUFFICIENT_EVIDENCE_ABSTAIN",
+        abstention_or_ambiguity_reason=(
+            f"I don't know: no local model responded. {VLLM_BASE_URL} and the other "
+            "configured Spark endpoints were unreachable, so nothing was read from "
+            "this PDF and nothing was written to the ledger."
+        ),
+        obligations=[],
     )

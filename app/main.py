@@ -8,13 +8,14 @@ from __future__ import annotations
 
 import csv
 import io
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
 from docx import Document
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
 
 from agents.extractor import (
     AVAILABLE_SPARK_MODELS,
@@ -23,7 +24,9 @@ from agents.extractor import (
     _is_ollama_endpoint,
 )
 from agents.workflow import stream_audit_workflow
+from shared.schemas import AgentTelemetryEvent
 from data.sql_tools import (
+    AgreementNotFoundError,
     fetch_all_agreements,
     generate_statutory_csv_rows,
     get_sheffield_ward_summaries,
@@ -49,6 +52,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(AgreementNotFoundError)
+async def handle_agreement_not_found(request: Request, exc: AgreementNotFoundError):
+    """
+    Unknown planning references are a real 404, not a silent audit of an unrelated
+    agreement. The response lists what the ledger actually holds.
+    """
+    reference = exc.args[0] if exc.args else ""
+    try:
+        available = [a["planning_reference"] for a in fetch_all_agreements()]
+    except Exception:  # database also down: still answer 404, just without the list
+        available = []
+    return JSONResponse(
+        status_code=404,
+        content={
+            "detail": (
+                f"No agreement '{reference}' in the ledger. The ledger is populated "
+                "only from real deeds via `python -m scripts.ingest_real_pdfs`."
+            ),
+            "ledger_references": available,
+        },
+    )
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -97,7 +123,7 @@ async def endpoint_publication_benchmark():
 @app.get("/api/audit/stream")
 async def audit_sse_stream(
     planning_reference: str = Query(
-        default="21/04512/FUL",
+        default="17/04673/OUT",
         description="Sheffield planning application reference to audit",
     ),
 ):
@@ -107,9 +133,26 @@ async def audit_sse_stream(
     """
 
     async def event_generator():
-        async for event in stream_audit_workflow(planning_reference=planning_reference):
-            payload_json = event.model_dump_json()
-            yield f"data: {payload_json}\n\n"
+        try:
+            async for event in stream_audit_workflow(planning_reference=planning_reference):
+                payload_json = event.model_dump_json()
+                yield f"data: {payload_json}\n\n"
+        except AgreementNotFoundError:
+            yield (
+                "data: "
+                + AgentTelemetryEvent(
+                    event_id="err-404",
+                    timestamp=datetime.now(timezone.utc),
+                    agent_node="report_synthesizer",
+                    status="ERROR",
+                    message=(
+                        f"No agreement '{planning_reference}' in the ledger. Populate it "
+                        "from real deeds with `python -m scripts.ingest_real_pdfs`."
+                    ),
+                    payload={"planning_reference": planning_reference},
+                ).model_dump_json()
+                + "\n\n"
+            )
 
     return StreamingResponse(
         event_generator(),
@@ -125,7 +168,7 @@ async def audit_sse_stream(
 @app.get("/api/audit")
 async def get_audit_report(
     planning_reference: str = Query(
-        default="21/04512/FUL",
+        default="17/04673/OUT",
         description="Sheffield planning application reference",
     ),
 ):
@@ -167,7 +210,7 @@ async def export_statutory_csv(
 
 @app.get("/api/export/demand-notice")
 async def export_demand_notice_docx(
-    planning_reference: str = Query(default="21/04512/FUL"),
+    planning_reference: str = Query(default="17/04673/OUT"),
 ):
     """
     Generate a formal Sheffield City Council Legal Services Section 106 Demand Notice (.docx)

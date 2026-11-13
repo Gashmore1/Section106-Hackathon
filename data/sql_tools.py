@@ -14,10 +14,14 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-from sqlalchemy import select
+from sqlalchemy import insert, select, update
 
 logger = logging.getLogger(__name__)
 _WARNED_DB_FALLBACK = False
+
+
+class AgreementNotFoundError(LookupError):
+    """No agreement with that planning reference exists in the ledger."""
 
 
 def _warn_db_fallback_once(exc: Exception) -> None:
@@ -31,9 +35,7 @@ def _warn_db_fallback_once(exc: Exception) -> None:
         )
 
 from data.seed_db import (
-    SEED_AGREEMENTS,
     SEED_INFLATION_INDICES,
-    SEED_OBLIGATIONS,
     SEED_SHEFFIELD_WARDS,
     InflationIndexRecord,
     S106AgreementRecord,
@@ -141,41 +143,33 @@ def compute_indexed_obligation(
 
 
 def fetch_all_agreements() -> list[dict]:
-    """Return all S106 agreements from PostgreSQL or canonical seed fallback."""
-    try:
-        engine = get_engine()
-        with engine.connect() as conn:
-            rows = conn.execute(select(S106AgreementRecord)).mappings().all()
-            if rows:
-                return [dict(r) for r in rows]
-    except Exception as exc:
-        _warn_db_fallback_once(exc)
-    return [dict(a) for a in SEED_AGREEMENTS]
+    """
+    Return every S106 agreement in the PostgreSQL ledger.
+
+    There is deliberately no in-memory fallback: if PostgreSQL is unreachable this
+    raises, so the API reports an error rather than silently serving figures that
+    were never sourced from a deed.
+    """
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(select(S106AgreementRecord)).mappings().all()
+    return [dict(r) for r in rows]
 
 
 def fetch_obligations_for_agreement(planning_reference: str) -> list[dict]:
-    """Return obligations for a given planning reference."""
-    try:
-        engine = get_engine()
-        with engine.connect() as conn:
-            stmt = select(S106ObligationRecord).where(
-                S106ObligationRecord.planning_reference == planning_reference
-            )
-            rows = conn.execute(stmt).mappings().all()
-            if rows:
-                result = []
-                for r in rows:
-                    d = dict(r)
-                    d["bbox"] = json.loads(d.pop("bbox_json", "{}") or "{}")
-                    result.append(d)
-                return result
-    except Exception as exc:
-        _warn_db_fallback_once(exc)
-    return [
-        dict(o)
-        for o in SEED_OBLIGATIONS
-        if o["planning_reference"] == planning_reference
-    ]
+    """Return the extracted obligations stored for one planning reference."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        stmt = select(S106ObligationRecord).where(
+            S106ObligationRecord.planning_reference == planning_reference
+        )
+        rows = conn.execute(stmt).mappings().all()
+    result: list[dict] = []
+    for r in rows:
+        d = dict(r)
+        d["bbox"] = json.loads(d.pop("bbox_json", "{}") or "{}")
+        result.append(d)
+    return result
 
 
 def persist_extracted_agreement(
@@ -184,52 +178,64 @@ def persist_extracted_agreement(
     document_url: str = "",
 ) -> None:
     """
-    Persist a newly extracted `ExtractedAgreement` (from live Nemotron PDF extraction)
-    into the canonical runtime ledger (and PostgreSQL when connected) so subsequent
-    audits, ward rollups, and CSV exports include it.
+    Upsert a live Nemotron extraction into the PostgreSQL ledger so subsequent
+    audits, ward rollups and CSV exports include it.
+
+    Only agreements the model actually extracted are stored. An ambiguous or
+    abstained result persists nothing, so an unreadable deed can never contribute
+    invented obligations to the ledger.
+
+    `dwellings_occupied_current` is occupation telemetry: when the caller does not
+    supply it we store 0 rather than guessing, which leaves every obligation
+    honestly reported as "not yet triggered" instead of fabricating a breach.
     """
     if extracted.extraction_status != "EXTRACTED" or not extracted.obligations:
         return
 
-    existing_agr = next(
-        (
-            a
-            for a in SEED_AGREEMENTS
-            if a["planning_reference"] == extracted.planning_reference
-        ),
-        None,
-    )
-    occupied = (
-        dwellings_occupied_current
-        if dwellings_occupied_current is not None
-        else (
-            int(existing_agr["dwellings_occupied_current"])
-            if existing_agr
-            else max(1, extracted.total_dwellings_permitted // 2)
+    engine = get_engine()
+    with engine.begin() as conn:
+        existing = conn.execute(
+            select(S106AgreementRecord).where(
+                S106AgreementRecord.planning_reference == extracted.planning_reference
+            )
+        ).mappings().first()
+
+        occupied = (
+            dwellings_occupied_current
+            if dwellings_occupied_current is not None
+            else (int(existing["dwellings_occupied_current"]) if existing else 0)
         )
-    )
+        agreement_values = {
+            "planning_reference": extracted.planning_reference,
+            "agreement_date": extracted.agreement_date,
+            "site_name": extracted.site_name,
+            "ward_name": extracted.ward_name,
+            "developer_name": extracted.developer_name,
+            "total_dwellings_permitted": extracted.total_dwellings_permitted,
+            "dwellings_occupied_current": occupied,
+            "document_url": document_url or (existing["document_url"] if existing else ""),
+        }
+        if existing:
+            conn.execute(
+                update(S106AgreementRecord)
+                .where(
+                    S106AgreementRecord.planning_reference == extracted.planning_reference
+                )
+                .values(**{k: v for k, v in agreement_values.items() if k != "planning_reference"})
+            )
+        else:
+            conn.execute(insert(S106AgreementRecord).values(**agreement_values))
 
-    agr_dict = {
-        "planning_reference": extracted.planning_reference,
-        "agreement_date": extracted.agreement_date,
-        "site_name": extracted.site_name,
-        "ward_name": extracted.ward_name,
-        "developer_name": extracted.developer_name,
-        "total_dwellings_permitted": extracted.total_dwellings_permitted,
-        "dwellings_occupied_current": occupied,
-        "document_url": document_url
-        or (existing_agr["document_url"] if existing_agr else ""),
-    }
-    if existing_agr is None:
-        SEED_AGREEMENTS.append(agr_dict)
-
-    existing_obl_ids = {o["obligation_id"] for o in SEED_OBLIGATIONS}
-    for obl in extracted.obligations:
-        if obl.obligation_id in existing_obl_ids:
-            continue
-        SEED_OBLIGATIONS.append(
-            {
-                "obligation_id": obl.obligation_id,
+        stored = {
+            row[0]
+            for row in conn.execute(
+                select(S106ObligationRecord.obligation_id).where(
+                    S106ObligationRecord.planning_reference == extracted.planning_reference
+                )
+            ).all()
+        }
+        for obl in extracted.obligations:
+            obligation_values = {
                 "planning_reference": extracted.planning_reference,
                 "category": obl.category.value,
                 "title": obl.title,
@@ -239,13 +245,30 @@ def persist_extracted_agreement(
                 "trigger_type": obl.trigger.trigger_type.value,
                 "trigger_description": obl.trigger.description,
                 "dwelling_threshold": obl.trigger.dwelling_threshold,
-                "amount_received_gbp": 0.0,
                 "clause_reference": obl.evidence.clause_reference,
                 "verbatim_quote": obl.evidence.verbatim_quote,
                 "page_number": obl.evidence.page_number,
-                "bbox": obl.evidence.bbox.model_dump() if obl.evidence.bbox else {},
+                "bbox_json": json.dumps(
+                    obl.evidence.bbox.model_dump() if obl.evidence.bbox else {}
+                ),
             }
-        )
+            if obl.obligation_id in stored:
+                # Never overwrite recorded payments with an extraction default.
+                conn.execute(
+                    update(S106ObligationRecord)
+                    .where(
+                        S106ObligationRecord.obligation_id == obl.obligation_id
+                    )
+                    .values(**{k: v for k, v in obligation_values.items() if k != "planning_reference"})
+                )
+            else:
+                conn.execute(
+                    insert(S106ObligationRecord).values(
+                        obligation_id=obl.obligation_id,
+                        amount_received_gbp=0.0,
+                        **obligation_values,
+                    )
+                )
 
 
 def run_deterministic_audit(
@@ -321,7 +344,9 @@ def run_deterministic_audit(
                 }
             )
     else:
-        agr = matched_agr or agreements[0]
+        if matched_agr is None:
+            raise AgreementNotFoundError(planning_reference)
+        agr = matched_agr
         obligations = fetch_obligations_for_agreement(agr["planning_reference"])
 
     occupied = (

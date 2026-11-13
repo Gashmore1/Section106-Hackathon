@@ -93,7 +93,7 @@ def build_s106_langgraph():
     from langgraph.graph import END, START, StateGraph
 
     async def node_pdf_parser(state: S106AuditState) -> S106AuditState:
-        ref = state.get("planning_reference", "21/04512/FUL")
+        ref = state.get("planning_reference", "17/04673/OUT")
         pdf_path = _resolve_default_pdf_path(ref, state.get("pdf_path"))
         blocks: list[ParsedTextBlock] = []
         filtered: list[ParsedTextBlock] = []
@@ -107,7 +107,7 @@ def build_s106_langgraph():
         return {"parsed_blocks": blocks, "filtered_blocks": filtered}
 
     async def node_vllm_extractor(state: S106AuditState) -> S106AuditState:
-        ref = state.get("planning_reference", "21/04512/FUL")
+        ref = state.get("planning_reference", "17/04673/OUT")
         blocks_to_use = state.get("filtered_blocks") or state.get("parsed_blocks")
         extracted = await extract_s106_obligations_vllm(
             blocks=blocks_to_use,
@@ -116,7 +116,7 @@ def build_s106_langgraph():
         return {"extracted_agreement": extracted}
 
     async def node_sql_indexation_auditor(state: S106AuditState) -> S106AuditState:
-        ref = state.get("planning_reference", "21/04512/FUL")
+        ref = state.get("planning_reference", "17/04673/OUT")
         extracted = state.get("extracted_agreement")
         report = run_deterministic_audit(ref, extracted_agreement=extracted)
         return {"audit_report": report}
@@ -146,7 +146,7 @@ def build_s106_langgraph():
 
 
 async def stream_audit_workflow(
-    planning_reference: str = "21/04512/FUL",
+    planning_reference: str = "17/04673/OUT",
     pdf_path: Optional[str] = None,
 ) -> AsyncGenerator[AgentTelemetryEvent, None]:
     """

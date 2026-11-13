@@ -423,7 +423,7 @@
   <script>
     "use strict";
 
-    let currentPlanningRef = "21/04512/FUL";
+    let currentPlanningRef = null;
     let currentDiscrepancies = [];
     let currentReport = null;
     let mapInstance = null;
@@ -648,13 +648,26 @@
       const res = await fetch("/api/agreements");
       const agreements = await res.json();
       const sel = document.getElementById("agreementSelect");
+      if (!agreements.length) {
+        // The ledger is filled only from real deeds, so an empty ledger is a real
+        // state. Say so instead of auditing a reference that does not exist.
+        sel.innerHTML = `<option value="">No deeds ingested yet</option>`;
+        sel.disabled = true;
+        document.getElementById("ledgerTableBody").innerHTML =
+          `<tr><td colspan="7" style="text-align:left;padding:18px">` +
+          `No agreements in the ledger. Populate it from the real deeds in ` +
+          `data/fixtures/pdfs/real/ with <code>python -m scripts.ingest_real_pdfs</code>.</td></tr>`;
+        return false;
+      }
       sel.innerHTML = agreements
         .map((a) => `<option value="${esc(a.planning_reference)}">${esc(a.planning_reference)} — ${esc(a.site_name)} (${esc(a.ward_name)})</option>`)
         .join("");
+      currentPlanningRef = agreements[0].planning_reference;
       sel.addEventListener("change", (e) => {
         currentPlanningRef = e.target.value;
         startLiveAudit();
       });
+      return true;
     }
 
     function selectEvidence(idx) {
@@ -833,9 +846,9 @@
 
     window.addEventListener("DOMContentLoaded", async () => {
       initThemeButton();
-      await loadAgreements();
+      const hasDeeds = await loadAgreements();
       await loadWardMap();
-      startLiveAudit();
+      if (hasDeeds) startLiveAudit();
     });
   </script>
 </body>

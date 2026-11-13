@@ -154,7 +154,7 @@ def download_real_s106_pdfs(max_pdfs: int = 5) -> list[Path]:
     return saved
 
 
-def search_sheffield_idox_major_applications(reference_query: str = "21/04512/FUL") -> dict[str, Any]:
+def search_sheffield_idox_major_applications(reference_query: str = "17/04673/OUT") -> dict[str, Any]:
     """
     Helper to query Sheffield City Council's Idox Public Access Planning Portal
     (`https://planningapps.sheffield.gov.uk/online-applications/`) using a cookie session.

@@ -1,0 +1,97 @@
+{
+  "_comment": "Provenance for every PDF in this directory. Nothing here is synthetic: each entry records where the deed was published and how its ward was determined. `ward_name` is cross-checked at ingest time by point-in-polygon against data/fixtures/spatial/sheffield_28_wards_ons_boundaries.geojson.",
+  "_generated": "2026-11-13",
+  "deeds": [
+    {
+      "file": "sheffield_17-04673-OUT_hollin-busk-engrossment.pdf",
+      "planning_reference": "17/04673/OUT",
+      "authority": "Sheffield City Council",
+      "authority_entity": "local-authority:SHF",
+      "site_name": "Land at junction with Carr Road and Hollin Busk Lane, Deepcar, Sheffield S36 1GH",
+      "site_postcode": "S36 1GH",
+      "site_lat": 53.482286,
+      "site_lon": -1.607358,
+      "ward_name": "Stocksbridge and Upper Don",
+      "ward_source": "postcodes.io S36 1GH centroid (53.482286, -1.607358) resolved against the ONS 2013 ward boundary layer",
+      "developer_name": "Hallam Land Management Limited",
+      "total_dwellings_permitted": 85,
+      "dwellings_source": "deed recital and appeal CD6.13: outline permission for up to 85 dwellings including open space",
+      "document_url": "http://www.dlpplanningappeals.co.uk/Docs3/CD8.6a%20106%20Agreement%20-%20Holins%20Busk%20FINAL%20-%20Engrossment%20Version%20-%20V4%20-%20C%204128-6206-4432%20v.4%204157-3221-3552.pdf",
+      "source_note": "Final engrossment (V4) of the section 106 deed, published as appeal exhibit CD8.6a for appeal APP/J4423/W/21/3267168 (DLP on behalf of Hallam Land Management v Sheffield City Council). Indexation clause 5 names the RPI All Items index, ONS item reference CHAW - the same series loaded from data/fixtures/inflation/.",
+      "related_applications": ["22/02303/OUT", "24/01876/REM"],
+      "verified": true
+    },
+    {
+      "file": "real_s106_384-18_72489_FUL-da.pdf",
+      "planning_reference": "18/72489/FUL",
+      "authority": "Salford City Council",
+      "authority_entity": "local-authority:SLF",
+      "site_name": "Land on the south east side of Priestley Road, Worsley, Salford",
+      "ward_name": null,
+      "ward_source": "not resolved: Salford ward, outside the Sheffield 28-ward layer",
+      "document_url": "https://www.salford.gov.uk/media/396011/384-72489.pdf",
+      "source_note": "Published by Salford City Council (organisation-entity 301) and listed in the national planning.data.gov.uk developer-agreement dataset with 1 published contribution totalling GBP 10,000.",
+      "published_ground_truth_gbp": 10000.0,
+      "verified": true
+    },
+    {
+      "file": "real_s106_385-18_72094_FUL-da.pdf",
+      "planning_reference": "18/72094/FUL",
+      "authority": "Salford City Council",
+      "authority_entity": "local-authority:SLF",
+      "site_name": "Ashtonfields, Grosvenor Road, Walkden",
+      "ward_name": null,
+      "ward_source": "not resolved: Salford ward, outside the Sheffield 28-ward layer",
+      "document_url": "https://www.salford.gov.uk/media/396012/385-72094.pdf",
+      "source_note": "Published by Salford City Council; national dataset lists 4 published contributions totalling GBP 90,000 (green infrastructure, open space and leisure, education, transport and travel).",
+      "published_ground_truth_gbp": 90000.0,
+      "verified": true
+    },
+    {
+      "file": "real_s106_386-18_72343_FUL-da.pdf",
+      "planning_reference": "18/72343/FUL",
+      "authority": "Salford City Council",
+      "authority_entity": "local-authority:SLF",
+      "site_name": "The Lowry Outlet, Waters Edge, Salford",
+      "ward_name": null,
+      "ward_source": "not resolved: Salford ward, outside the Sheffield 28-ward layer",
+      "document_url": "https://www.salford.gov.uk/media/396013/386-72343.pdf",
+      "source_note": "Published by Salford City Council; national dataset lists 2 published contributions totalling GBP 72,400.",
+      "published_ground_truth_gbp": 72400.0,
+      "verified": true
+    },
+    {
+      "file": "real_s106_387-18_72242_FUL-da.pdf",
+      "planning_reference": "18/72242/FUL",
+      "authority": "Salford City Council",
+      "authority_entity": "local-authority:SLF",
+      "site_name": "28 King Street and 49-51 Queen Street, Blackfriars, Salford",
+      "ward_name": null,
+      "ward_source": "not resolved: Salford ward, outside the Sheffield 28-ward layer",
+      "document_url": "https://www.salford.gov.uk/media/396014/387-72242.pdf",
+      "source_note": "Published by Salford City Council; national dataset lists 2 published contributions totalling GBP 474,700.",
+      "published_ground_truth_gbp": 474700.0,
+      "verified": true
+    },
+    {
+      "file": "real_s106_388-16_68464_FUL-da.pdf",
+      "planning_reference": "16/68464/FUL",
+      "authority": "Salford City Council",
+      "authority_entity": "local-authority:SLF",
+      "site_name": "Land at the former Lyceum Theatre, Church Street, Eccles, Salford M30 0LZ",
+      "ward_name": null,
+      "ward_source": "not resolved: Salford ward, outside the Sheffield 28-ward layer",
+      "document_url": "https://www.salford.gov.uk/media/396015/388-68464.pdf",
+      "source_note": "Published by Salford City Council; national dataset lists 2 published contributions totalling GBP 350,969.",
+      "published_ground_truth_gbp": 350969.0,
+      "verified": true
+    }
+  ],
+  "known_unavailable": [
+    {
+      "description": "Two further Sheffield City Council section 106 agreements (planning references 05/01134/REM and 06/00412/FUL) were released by the Council under an EIR request and are published on WhatDoTheyKnow as '000008275 S106 Agreement 531 Redacted.pdf' (1.9 MB) and '000005063 S106 Agreement 548 Redacted.pdf' (1.1 MB).",
+      "why_not_committed": "whatdotheyknow.com rejects scripted attachment downloads (HTTP 418). Download them in a browser and drop them in this directory, then add a manifest entry.",
+      "page": "https://www.whatdotheyknow.com/request/s106_financial_contributions_140"
+    }
+  ]
+}

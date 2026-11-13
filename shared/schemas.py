@@ -139,7 +139,7 @@ class ExtractedAgreement(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     planning_reference: str = Field(
-        ..., description="Sheffield planning application reference, e.g. '21/04512/FUL' or 'UNKNOWN'"
+        ..., description="Planning application reference the deed relates to, e.g. '17/04673/OUT'; use 'UNKNOWN' only if the deed does not state one"
     )
     agreement_date: date = Field(..., description="Date the S106 deed was executed")
     site_name: str = Field(..., description="Development site name / address")
