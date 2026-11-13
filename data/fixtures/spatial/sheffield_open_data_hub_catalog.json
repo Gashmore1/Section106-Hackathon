@@ -1,0 +1,177 @@
+[
+  {
+    "id": "186e2f1abc3846a9a572c9dbcfd964a8_10",
+    "title": "Project Hidden Sheffield Data",
+    "type": "Feature Layer",
+    "url": "https://services.arcgis.com/XSeYKQzfXnEgju9o/arcgis/rest/services/Project_Hidden_Sheffield_Data/FeatureServer/10",
+    "slug": "EsriUkeducation::project-hidden-sheffield-data"
+  },
+  {
+    "id": "1762b1dfaa7a41d6b249ced2264f849f_0",
+    "title": "Aggregation of Strokes to Sheffield",
+    "type": "Feature Layer",
+    "url": "https://services2.arcgis.com/NzAqpeLbvbvoP3qh/arcgis/rest/services/Aggregation_of_Strokes_to_Sheffield/FeatureServer/0",
+    "slug": null
+  },
+  {
+    "id": "01743a068b70469cbd14cdb270ad250a_0",
+    "title": "Aggregation of Crime datapoint to Sheffield",
+    "type": "Feature Layer",
+    "url": "https://services6.arcgis.com/lk0VUfBOTQMEML4x/arcgis/rest/services/Aggregation_of_Crime_datapoint_to_Sheffield/FeatureServer/0",
+    "slug": null
+  },
+  {
+    "id": "01743a068b70469cbd14cdb270ad250a",
+    "title": "Aggregation of Crime datapoint to Sheffield",
+    "type": "Feature Service",
+    "url": "https://services6.arcgis.com/lk0VUfBOTQMEML4x/arcgis/rest/services/Aggregation_of_Crime_datapoint_to_Sheffield/FeatureServer",
+    "slug": null
+  },
+  {
+    "id": "3e311babb0ab4a5da3ac662dff093d8f",
+    "title": "Sheffield Park and Garden",
+    "type": "Map Service",
+    "url": "https://tiles-eu1.arcgis.com/NPIbx47lsIiu2pqz/arcgis/rest/services/Sheffield_Park_and_Garden/MapServer",
+    "slug": "National-Trust::sheffield-park-and-garden"
+  },
+  {
+    "id": "3648911f3f38430ebeba1760e337d510_1",
+    "title": "Sheffield, NB - Nov 1, 2024 - Survey Route",
+    "type": "Feature Layer",
+    "url": "https://services.arcgis.com/rGKxabTU9mcXMw7k/arcgis/rest/services/Sheffieldsurveyroute/FeatureServer/1",
+    "slug": "westernu::sheffield-nb-nov-1-2024-survey-route"
+  },
+  {
+    "id": "06c0243e872b45a798565eb1bd430bb5_0",
+    "title": "Sheffield, NB - Nov 1, 2024 - Drone Photos",
+    "type": "Feature Layer",
+    "url": "https://services.arcgis.com/rGKxabTU9mcXMw7k/arcgis/rest/services/SheffieldDronePhotos/FeatureServer/0",
+    "slug": "westernu::sheffield-nb-nov-1-2024-drone-photos"
+  },
+  {
+    "id": "21977a5e03e14872a71002bb0cfdb131",
+    "title": "Sheffield, NB - Nov 1, 2024 - Survey Summary Map",
+    "type": "Web Experience",
+    "url": "https://experience.arcgis.com/experience/21977a5e03e14872a71002bb0cfdb131/",
+    "slug": "westernu::sheffield-nb-nov-1-2024-survey-summary-map"
+  },
+  {
+    "id": "9382b6aff7e344b98b4b7fa78f9f41ad_1",
+    "title": "Sheffield, NB - Nov 1, 2024 - Drone Flight Paths",
+    "type": "Feature Layer",
+    "url": "https://services.arcgis.com/rGKxabTU9mcXMw7k/arcgis/rest/services/Sheffieldflightpaths/FeatureServer/1",
+    "slug": "westernu::sheffield-nb-nov-1-2024-drone-flight-paths"
+  },
+  {
+    "id": "e2769304db6147c9888f6ca6cd200471",
+    "title": "Sheffield, NB - Nov 1, 2024 - Survey Investigation Map",
+    "type": "Web Map",
+    "url": null,
+    "slug": "westernu::sheffield-nb-nov-1-2024-survey-investigation-map"
+  },
+  {
+    "id": "96b5d60e614948fd8df62e6a4f3aeace",
+    "title": "Sheffield",
+    "type": "Web Map",
+    "url": null,
+    "slug": null
+  },
+  {
+    "id": "8394025eb1b34243827d238feb947a6a",
+    "title": "Sheffield data",
+    "type": "Web Map",
+    "url": null,
+    "slug": "EsriUkeducation::sheffield-data"
+  },
+  {
+    "id": "3831aa3ba3234055940ad8469cafbd8b",
+    "title": "Sheffield postcodes",
+    "type": "Web Mapping Application",
+    "url": "https://www.arcgis.com/apps/View/index.html?appid=3831aa3ba3234055940ad8469cafbd8b",
+    "slug": null
+  },
+  {
+    "id": "34e9ecb1f69a477abeba417b801142e4",
+    "title": "Sheffield postcodes",
+    "type": "Web Map",
+    "url": null,
+    "slug": null
+  },
+  {
+    "id": "964bb99b36434b028514baeb6f5bf386_8",
+    "title": "Sheffield Audit Points",
+    "type": "Feature Layer",
+    "url": "https://services3.arcgis.com/0ic9iB2GbjN66MtY/arcgis/rest/services/Sheffield_Audit_Points/FeatureServer/8",
+    "slug": "Ethosep::sheffield-audit-points"
+  },
+  {
+    "id": "a5962601ee85481988692392433a03d7_1",
+    "title": "Sheffield LineFeatures 20200214",
+    "type": "Feature Layer",
+    "url": "https://services7.arcgis.com/vZE8iWev3YlXRRXa/arcgis/rest/services/Sheffield_Features_20200214/FeatureServer/1",
+    "slug": null
+  },
+  {
+    "id": "2dac8caf0926448fb93e73e9936dc102",
+    "title": "Sheffield data app",
+    "type": "Web Mapping Application",
+    "url": "https://esriukeducation.maps.arcgis.com/apps/InteractiveLegend/index.html?appid=2dac8caf0926448fb93e73e9936dc102",
+    "slug": "EsriUkeducation::sheffield-data-app-1"
+  },
+  {
+    "id": "6c80a906f0f34cb29afe1dd256830f8d",
+    "title": "Sheffield Complete Street",
+    "type": "Web Mapping Application",
+    "url": "https://bscgroup.maps.arcgis.com/apps/View/index.html?appid=6c80a906f0f34cb29afe1dd256830f8d",
+    "slug": null
+  },
+  {
+    "id": "36c26d1e3e2c4da6b069931d83f51604_0",
+    "title": "Sheffield Data 2016",
+    "type": "Feature Layer",
+    "url": "https://services6.arcgis.com/ToZCZTL1NVuJDmKW/arcgis/rest/services/Sheffield_Data_2016/FeatureServer/0",
+    "slug": "AckSch::sheffield-data-2016"
+  },
+  {
+    "id": "a5962601ee85481988692392433a03d7_0",
+    "title": "Sheffield PointFeatures 20200214",
+    "type": "Feature Layer",
+    "url": "https://services7.arcgis.com/vZE8iWev3YlXRRXa/arcgis/rest/services/Sheffield_Features_20200214/FeatureServer/0",
+    "slug": null
+  },
+  {
+    "id": "9e1ab0191cbb41c98593959583a61674",
+    "title": "Sheffield wards map",
+    "type": "Web Map",
+    "url": null,
+    "slug": null
+  },
+  {
+    "id": "5b016240e9034070826c120cd6ec27ec",
+    "title": "sheffield image banner",
+    "type": "Image",
+    "url": null,
+    "slug": null
+  },
+  {
+    "id": "abec05648618484faf3fc3691db49b36",
+    "title": "Sheffield Test data",
+    "type": "Scene Service",
+    "url": "https://tiles.arcgis.com/tiles/Dn40vzt2R38VJsSS/arcgis/rest/services/Sheffield_Test_data/SceneServer",
+    "slug": null
+  },
+  {
+    "id": "ae46c05155fa48b88c7fd9fe8e7d7391",
+    "title": "Sheffield Test data",
+    "type": "Scene Package",
+    "url": null,
+    "slug": null
+  },
+  {
+    "id": "e322dc874f4d4d95affa08cc8b9950c1_0",
+    "title": "TRUE Centroids for Sheffield ED   MB",
+    "type": "Feature Layer",
+    "url": "https://services2.arcgis.com/NzAqpeLbvbvoP3qh/arcgis/rest/services/TRUE_Centroids_for_Sheffield_ED___MB/FeatureServer/0",
+    "slug": null
+  }
+]

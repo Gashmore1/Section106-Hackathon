@@ -1,0 +1,161 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "ward_code": "E05010861",
+        "ward_name": "City",
+        "lac_area": "Central Local Area Committee",
+        "cil_charging_zone": "Zone 3 (City Centre Residential \u00a350/sqm)",
+        "imd_decile": 3,
+        "green_space_access_pct": 41.2,
+        "affordable_housing_need_score": 88.5
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -1.485,
+              53.372
+            ],
+            [
+              -1.455,
+              53.372
+            ],
+            [
+              -1.455,
+              53.39
+            ],
+            [
+              -1.485,
+              53.39
+            ],
+            [
+              -1.485,
+              53.372
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ward_code": "E05010879",
+        "ward_name": "Walkley",
+        "lac_area": "Central Local Area Committee",
+        "cil_charging_zone": "Zone 3 (Inner Northwest / Kelham \u00a350/sqm)",
+        "imd_decile": 5,
+        "green_space_access_pct": 62.4,
+        "affordable_housing_need_score": 79.0
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -1.51,
+              53.385
+            ],
+            [
+              -1.475,
+              53.385
+            ],
+            [
+              -1.475,
+              53.405
+            ],
+            [
+              -1.51,
+              53.405
+            ],
+            [
+              -1.51,
+              53.385
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ward_code": "E05010866",
+        "ward_name": "Ecclesall",
+        "lac_area": "South West Local Area Committee",
+        "cil_charging_zone": "Zone 5 (South West High Value \u00a380/sqm)",
+        "imd_decile": 10,
+        "green_space_access_pct": 89.1,
+        "affordable_housing_need_score": 64.2
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -1.535,
+              53.345
+            ],
+            [
+              -1.49,
+              53.345
+            ],
+            [
+              -1.49,
+              53.37
+            ],
+            [
+              -1.535,
+              53.37
+            ],
+            [
+              -1.535,
+              53.345
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "ward_code": "E05010870",
+        "ward_name": "Hillsborough",
+        "lac_area": "North West Local Area Committee",
+        "cil_charging_zone": "Zone 2 (North / Hillsborough \u00a330/sqm)",
+        "imd_decile": 4,
+        "green_space_access_pct": 71.8,
+        "affordable_housing_need_score": 74.6
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -1.525,
+              53.4
+            ],
+            [
+              -1.485,
+              53.4
+            ],
+            [
+              -1.485,
+              53.422
+            ],
+            [
+              -1.525,
+              53.422
+            ],
+            [
+              -1.525,
+              53.4
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

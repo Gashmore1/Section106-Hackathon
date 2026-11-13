@@ -17,6 +17,8 @@ artifacts/
 *.docx
 *.pdf
 !sample_*.pdf
+!data/fixtures/pdfs/*.pdf
+!data/fixtures/pdfs/**/*.pdf
 
 # graphify: commit the graph deliverables (graph.json / report / HTML) for shared team
 # context, but never the regenerable cache or machine-specific build state

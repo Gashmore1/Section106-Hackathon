@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import AsyncGenerator, Optional, TypedDict
 
 from agents.extractor import (
@@ -37,6 +38,20 @@ class S106AuditState(TypedDict, total=False):
     telemetry_log: list[AgentTelemetryEvent]
 
 
+FIXTURES_PDF_DIR = Path(__file__).resolve().parent.parent / "data" / "fixtures" / "pdfs"
+
+
+def _resolve_default_pdf_path(planning_reference: str, pdf_path: Optional[str]) -> Optional[str]:
+    """Resolve an explicit `pdf_path` or auto-discover matching fixture PDF in `data/fixtures/pdfs/`."""
+    if pdf_path:
+        return pdf_path
+    slug = planning_reference.replace("/", "-")
+    candidate = FIXTURES_PDF_DIR / f"{slug}-S106.pdf"
+    if candidate.exists():
+        return str(candidate)
+    return None
+
+
 def _make_event(
     node: str,
     status: str,
@@ -60,7 +75,8 @@ def build_s106_langgraph():
     from langgraph.graph import END, START, StateGraph
 
     async def node_pdf_parser(state: S106AuditState) -> S106AuditState:
-        pdf_path = state.get("pdf_path")
+        ref = state.get("planning_reference", "21/04512/FUL")
+        pdf_path = _resolve_default_pdf_path(ref, state.get("pdf_path"))
         blocks: list[ParsedTextBlock] = []
         if pdf_path:
             try:
@@ -116,6 +132,7 @@ async def stream_audit_workflow(
     Never fabricates block counts when no PDF file is attached.
     """
     blocks: list[ParsedTextBlock] = []
+    pdf_path = _resolve_default_pdf_path(planning_reference, pdf_path)
     if pdf_path:
         yield _make_event(
             "pdf_parser",
