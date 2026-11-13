@@ -1,0 +1,860 @@
+{
+  "_comment": "Every figure in this file is quoted from a Sheffield City Council Infrastructure Funding Statement, which the council must publish each year under the CIL (Amendment) (England) (No.2) Regulations 2019. Sheffield publishes nothing to the national planning-development-data dataset, so these statements are the only published account of what the council has received and what it is holding.",
+  "_generated": "2026-11-13",
+  "_source_urls": {
+    "2019/20": "https://www.sheffield.gov.uk/sites/default/files/docs/planning-and-development/cil/ifs-report-2019-2020.pdf",
+    "2020/21": "https://www.sheffield.gov.uk/sites/default/files/docs/planning-and-development/cil/ifs-report-2020-2021.pdf",
+    "2021/22": "https://www.sheffield.gov.uk/sites/default/files/2023-03/infrastructure_funding_statement_2021-2022.pdf",
+    "2022/23": "https://www.sheffield.gov.uk/sites/default/files/2024-01/infrastructure_funding_statement_2022-2023.pdf",
+    "2023/24": "https://www.sheffield.gov.uk/sites/default/files/2025-03/ifs_report_sheffieldcitycouncil_2023_2024.pdf",
+    "2024/25": "https://www.sheffield.gov.uk/sites/default/files/2026-01/infrastructure_funding_statement_2024_to_2025.pdf"
+  },
+  "_definitions": {
+    "s106_receipts_in_year": "paragraph 4.10: money actually received in the year",
+    "s106_balance_retained": "the council's own 'Current S106 Balance' paragraph",
+    "s106_agreements_signed": "paragraph 4.8. Not one measure across the six years: up to 2022/23 the wording is 'N S106 agreements were signed', from 2023/24 it is 'N S106 agreements (including deed of variations and supplemental deeds)'. The counts either side of that change are not comparable.",
+    "cil_unallocated": "Table 1: CIL received up to and including the reported year, less the amount allocated to projects",
+    "unspent_at_year_end": "derived: S106 balance retained plus unallocated CIL"
+  },
+  "authority": "Sheffield City Council",
+  "years": {
+    "2019/20": {
+      "financial_year": "2019/20",
+      "source": {
+        "file": "ifs-report-2019-2020.pdf",
+        "sha256": "b48271d5883a7efed8f49289b28ce7cfb743ca7eabfd29cf99d6f4d36909b6d2",
+        "pages": 17,
+        "publisher": "Sheffield City Council",
+        "document": "Annual Infrastructure Funding Statement (CIL and Section 106)"
+      },
+      "figures": {
+        "s106_receipts_in_year": {
+          "page": 9,
+          "quote": "can be viewed online at https://planningapps.sheffield.gov.uk/online-applications/. 4.10 The total amount of Section 106 receipts in the reporting year 2019/20 was \u00a33,504,340, which is an increase of 64% compared to the previous year. 3 CIL Regulation 122 4 National-Planning-Policy-Framework 5 Community Infrastructure Lev",
+          "stated_year": "2019/20",
+          "stated_change": "increase of 64%",
+          "printed": "\u00a33,504,340",
+          "value_gbp": 3504340.0
+        },
+        "s106_agreements_signed": {
+          "page": 9,
+          "quote": "utions in accordance with the regulations. 4.7 S106 agreements contributions received 4.8 15 S106 agreements were signed in 2019/20 with potential future receipts of \u00a32,714,346, becoming due once the developments have commenced. 4.9 S106 agreements and other relevan",
+          "count": 15,
+          "stated_year": "2019/20",
+          "basis": "agreements signed in the year, as worded that year",
+          "printed": "\u00a32,714,346",
+          "value_gbp": 2714346.0
+        },
+        "s106_balance_retained": {
+          "page": 12,
+          "quote": "sult of the receipts and expenditure set out in paragraphs 4.10 to 4.21 of this statement the amount retained at the end of 2019/20 was \u00a317,575,274. Although spend was low, this is expected to change as 74% of the retained amount has bee",
+          "stated_year": "2019/20",
+          "printed": "\u00a317,575,274",
+          "value_gbp": 17575274.0
+        },
+        "s106_monitoring_cost": {
+          "page": 11,
+          "quote": "ction 106 Administration 4.21 The amount of planning obligation money spent in respect of monitoring of Section 106 agreements is \u00a359,837.",
+          "stated_year": null,
+          "printed": "\u00a359,837",
+          "value_gbp": 59837.0
+        },
+        "cil_received_in_year": {
+          "page": 6,
+          "quote": "Page 6 of 17 3.8 The total amount of CIL received in the reporting year 2019/20 was \u00a34,481,827. Table 1 below shows all CIL received, up to and including the reporting year, and what r",
+          "stated_year": "2019/20",
+          "printed": "\u00a34,481,827",
+          "value_gbp": 4481827.0
+        },
+        "cil_demand_notices_issued": {
+          "page": 5,
+          "quote": "e is sent out requesting the payment in accordance with the instalment policy1. The total value of demand notices issued in 2019/20 is \u00a32,604,628. This is made up of the total amount of all liability notice\u2019s \u00a32,583,085, total surcharg",
+          "stated_year": "2019/20",
+          "printed": "\u00a32,604,628",
+          "value_gbp": 2604628.0
+        },
+        "cil_demand_liability_notices": {
+          "page": 5,
+          "quote": "out requesting the payment in accordance with the instalment policy1. The total value of demand notices issued in 2019/20 is \u00a32,604,628. This is made up of the total amount of all liability notice\u2019s \u00a32,583,085, total surcharges amount \u00a318,850 and total late payment interest accrued \u00a32,602. 1 CIL In",
+          "stated_year": null,
+          "printed": "\u00a32,583,085",
+          "value_gbp": 2583085.0
+        },
+        "cil_demand_surcharges": {
+          "page": 5,
+          "quote": "out requesting the payment in accordance with the instalment policy1. The total value of demand notices issued in 2019/20 is \u00a32,604,628. This is made up of the total amount of all liability notice\u2019s \u00a32,583,085, total surcharges amount \u00a318,850 and total late payment interest accrued \u00a32,602. 1 CIL Instalment Policy",
+          "stated_year": null,
+          "printed": "\u00a318,850",
+          "value_gbp": 18850.0
+        },
+        "cil_demand_interest": {
+          "page": 5,
+          "quote": "out requesting the payment in accordance with the instalment policy1. The total value of demand notices issued in 2019/20 is \u00a32,604,628. This is made up of the total amount of all liability notice\u2019s \u00a32,583,085, total surcharges amount \u00a318,850 and total late payment interest accrued \u00a32,602. 1 CIL Instalment Policy",
+          "stated_year": null,
+          "printed": "\u00a32,602",
+          "value_gbp": 2602.0
+        }
+      },
+      "corrections": [],
+      "checks": {
+        "demand_notice_components": {
+          "stated_total": 2604628.0,
+          "sum_of_components": 2604537.0,
+          "difference_gbp": 91.0,
+          "ties": false
+        },
+        "cil_table1_rows_tie": true
+      },
+      "cil_cumulative_table": {
+        "_page": 6,
+        "strategic": {
+          "received_to_date_gbp": 11777048.0,
+          "allocated_gbp": 11777048.0,
+          "unallocated_gbp": 0.0,
+          "checks": {
+            "received_minus_allocated_equals_unallocated": true
+          }
+        },
+        "neighbourhood": {
+          "received_to_date_gbp": 2195200.0,
+          "allocated_gbp": 2195200.0,
+          "unallocated_gbp": 0.0,
+          "checks": {
+            "received_minus_allocated_equals_unallocated": true
+          }
+        }
+      }
+    },
+    "2020/21": {
+      "financial_year": "2020/21",
+      "source": {
+        "file": "ifs-report-2020-2021.pdf",
+        "sha256": "166d35d706b5bc45b007888410d474a519e26ef1cf15e61fc861dd1dbf285407",
+        "pages": 19,
+        "publisher": "Sheffield City Council",
+        "document": "Annual Infrastructure Funding Statement (CIL and Section 106)"
+      },
+      "figures": {
+        "s106_receipts_in_year": {
+          "page": 11,
+          "quote": "can be viewed online at https://planningapps.sheffield.gov.uk/online-applications/. 4.10 The total amount of Section 106 receipts in the reporting year 2020/21 was \u00a33,260,284, which is a decrease of 7% compared to the previous year. This is a reflection of the effects of the pandemic as progression of development initia",
+          "stated_year": "2020/21",
+          "stated_change": "decrease of 7%",
+          "printed": "\u00a33,260,284",
+          "value_gbp": 3260284.0
+        },
+        "s106_agreements_signed": {
+          "page": 11,
+          "quote": "ed below in paragraphs 4.7, 4.11 and 4.22. 4.7 S106 agreements contributions received 4.8 Seventeen S106 agreements were signed in 2020/21 with potential future receipts of \u00a31,535,254, becoming due once the developments have commenced. 4.9 S106 agreements and other relevan",
+          "count": 17,
+          "stated_year": "2020/21",
+          "basis": "agreements signed in the year, as worded that year",
+          "printed": "\u00a31,535,254",
+          "value_gbp": 1535254.0
+        },
+        "s106_balance_retained": {
+          "page": 16,
+          "quote": ".25 As a result of the receipts and expenditure set out in paragraphs 4.10 to 4.21 above, the amount retained at the end of 2020/21 was \u00a318,958,520. Although spend was low, this is expected to change as 60% of the retained amount has bee",
+          "stated_year": "2020/21",
+          "printed": "\u00a318,958,520",
+          "value_gbp": 18958520.0
+        },
+        "s106_monitoring_cost": {
+          "page": 15,
+          "quote": "nistration 4.21 The amount of planning obligation money collected and spent in respect of monitoring of Section 106 agreements is \u00a35,159.",
+          "stated_year": null,
+          "printed": "\u00a35,159",
+          "value_gbp": 5159.0
+        },
+        "cil_received_in_year": {
+          "page": 8,
+          "quote": "Page 8 of 19 3.8 The total amount of CIL received in the reporting year 2020/21 was \u00a33,252,851.33. Table 1 below shows all CIL received, up to and including the reporting year, and what r",
+          "stated_year": "2020/21",
+          "printed": "\u00a33,252,851.33",
+          "value_gbp": 3252851.33
+        },
+        "cil_demand_notices_issued": {
+          "page": 7,
+          "quote": "e is sent out requesting the payment in accordance with the instalment policy8. The total value of demand notices issued in 2020/21 is \u00a36,058,976.98. This is made up of the total amount of all liability notices (\u00a36,008,906.52), total surc",
+          "stated_year": "2020/21",
+          "printed": "\u00a36,058,976.98",
+          "value_gbp": 6058976.98
+        },
+        "cil_demand_liability_notices": {
+          "page": 7,
+          "quote": "out requesting the payment in accordance with the instalment policy8. The total value of demand notices issued in 2020/21 is \u00a36,058,976.98. This is made up of the total amount of all liability notices (\u00a36,008,906.52), total surcharges amount (\u00a314,563.54) and total late payment interest accrued (\u00a335,506.9",
+          "stated_year": null,
+          "printed": "\u00a36,008,906.52",
+          "value_gbp": 6008906.52
+        },
+        "cil_demand_surcharges": {
+          "page": 7,
+          "quote": "out requesting the payment in accordance with the instalment policy8. The total value of demand notices issued in 2020/21 is \u00a36,058,976.98. This is made up of the total amount of all liability notices (\u00a36,008,906.52), total surcharges amount (\u00a314,563.54) and total late payment interest accrued (\u00a335,506.92). 8 CIL Instalment Policy",
+          "stated_year": null,
+          "printed": "\u00a314,563.54",
+          "value_gbp": 14563.54
+        },
+        "cil_demand_interest": {
+          "page": 7,
+          "quote": "out requesting the payment in accordance with the instalment policy8. The total value of demand notices issued in 2020/21 is \u00a36,058,976.98. This is made up of the total amount of all liability notices (\u00a36,008,906.52), total surcharges amount (\u00a314,563.54) and total late payment interest accrued (\u00a335,506.92). 8 CIL Instalment Policy",
+          "stated_year": null,
+          "printed": "\u00a335,506.92",
+          "value_gbp": 35506.92
+        }
+      },
+      "corrections": [],
+      "checks": {
+        "demand_notice_components": {
+          "stated_total": 6058976.98,
+          "sum_of_components": 6058976.98,
+          "difference_gbp": 0.0,
+          "ties": true
+        },
+        "cil_table1_rows_tie": true
+      },
+      "cil_cumulative_table": {
+        "_page": 8,
+        "strategic": {
+          "received_to_date_gbp": 15350132.9,
+          "allocated_gbp": 14044652.0,
+          "unallocated_gbp": 1305480.9,
+          "checks": {
+            "received_minus_allocated_equals_unallocated": true
+          }
+        },
+        "neighbourhood": {
+          "received_to_date_gbp": 2694680.49,
+          "allocated_gbp": 2694680.49,
+          "unallocated_gbp": 0.0,
+          "checks": {
+            "received_minus_allocated_equals_unallocated": true
+          }
+        }
+      }
+    },
+    "2021/22": {
+      "financial_year": "2021/22",
+      "source": {
+        "file": "infrastructure_funding_statement_2021-2022.pdf",
+        "sha256": "ae4974f4511dd0c99c837b19098f5351c9b8786602a43b7bd04eb5603a2bd1c9",
+        "pages": 21,
+        "publisher": "Sheffield City Council",
+        "document": "Annual Infrastructure Funding Statement (CIL and Section 106)"
+      },
+      "figures": {
+        "s106_receipts_in_year": {
+          "page": 12,
+          "quote": "can be viewed online at https://planningapps.sheffield.gov.uk/online-applications/. 4.10 The total amount of Section 106 receipts in the reporting year 2021/22 was \u00a32,561,641.29, which is a decrease of 21.5% compared to the previous year. This reflects the effects of the pandemic slowing the progression of development on site",
+          "stated_year": "2021/22",
+          "stated_change": "decrease of 21.5%",
+          "printed": "\u00a32,561,641.29",
+          "value_gbp": 2561641.29
+        },
+        "s106_agreements_signed": {
+          "page": 12,
+          "quote": "detailed below in paragraphs 4.7 to 4.31. 4.7 S106 agreements contributions received 4.8 Thirteen S106 agreements were signed in 2021/22 with potential future receipts of \u00a31,084,094.77, becoming due once the developments have commenced. This figure does not consider indexat",
+          "count": 13,
+          "stated_year": "2021/22",
+          "basis": "agreements signed in the year, as worded that year",
+          "printed": "\u00a31,084,094.77",
+          "value_gbp": 1084094.77
+        },
+        "s106_balance_retained": {
+          "page": 17,
+          "quote": ".31 As a result of the receipts and expenditure set out in paragraphs 4.10 to 4.27 above, the amount retained at the end of 2021/22 was \u00a318,151,110.00 Although spend was still relatively low this year, due to project delays, this is expecte",
+          "stated_year": "2021/22",
+          "printed": "\u00a318,151,110.00",
+          "value_gbp": 18151110.0
+        },
+        "s106_monitoring_cost": {
+          "page": 17,
+          "quote": "nistration 4.27 The amount of planning obligation money collected and spent in respect of monitoring of Section 106 agreements in 2021/22 is \u00a39,750.00. 4.28 Non-monetary S106 agreements 4.29 The Council has agreed 1 non-monetary S106 agreem",
+          "stated_year": null,
+          "printed": "\u00a39,750.00",
+          "value_gbp": 9750.0
+        },
+        "cil_received_in_year": {
+          "page": 8,
+          "quote": "surcharges amount (\u00a391,281.70) and total late payment interest accrued (\u00a336,830.65). 3.8 The total amount of CIL received in the reporting year 2021/22 was \u00a34,872,812.91. Table 1 below shows all CIL received, up to and including the reporting year, and what r",
+          "stated_year": "2021/22",
+          "printed": "\u00a34,872,812.91",
+          "value_gbp": 4872812.91
+        },
+        "cil_demand_notices_issued": {
+          "page": 8,
+          "quote": "Page 8 of 21 value of demand notices issued in 2021/22 is \u00a37,832,404.57. This is made up of the total amount of all liability notices (\u00a37,704,292.22), total surc",
+          "stated_year": "2021/22",
+          "printed": "\u00a37,832,404.57",
+          "value_gbp": 7832404.57
+        },
+        "cil_demand_liability_notices": {
+          "page": 8,
+          "quote": "Page 8 of 21 value of demand notices issued in 2021/22 is \u00a37,832,404.57. This is made up of the total amount of all liability notices (\u00a37,704,292.22), total surcharges amount (\u00a391,281.70) and total late payment interest accrued (\u00a336,830.6",
+          "stated_year": null,
+          "printed": "\u00a37,704,292.22",
+          "value_gbp": 7704292.22
+        },
+        "cil_demand_surcharges": {
+          "page": 8,
+          "quote": "Page 8 of 21 value of demand notices issued in 2021/22 is \u00a37,832,404.57. This is made up of the total amount of all liability notices (\u00a37,704,292.22), total surcharges amount (\u00a391,281.70) and total late payment interest accrued (\u00a336,830.65). 3.8 The total amount of CIL receiv",
+          "stated_year": null,
+          "printed": "\u00a391,281.70",
+          "value_gbp": 91281.7
+        },
+        "cil_demand_interest": {
+          "page": 8,
+          "quote": "Page 8 of 21 value of demand notices issued in 2021/22 is \u00a37,832,404.57. This is made up of the total amount of all liability notices (\u00a37,704,292.22), total surcharges amount (\u00a391,281.70) and total late payment interest accrued (\u00a336,830.65). 3.8 The total amount of CIL received in the reporting year 2021/22 was \u00a34,872,812.91. T",
+          "stated_year": null,
+          "printed": "\u00a336,830.65",
+          "value_gbp": 36830.65
+        }
+      },
+      "corrections": [],
+      "checks": {
+        "demand_notice_components": {
+          "stated_total": 7832404.57,
+          "sum_of_components": 7832404.57,
+          "difference_gbp": 0.0,
+          "ties": true
+        },
+        "cil_table1_rows_tie": true
+      },
+      "cil_cumulative_table": {
+        "_page": 8,
+        "strategic": {
+          "received_to_date_gbp": 19533094.96,
+          "allocated_gbp": 14225147.64,
+          "unallocated_gbp": 5307947.32,
+          "checks": {
+            "received_minus_allocated_equals_unallocated": true
+          }
+        },
+        "neighbourhood": {
+          "received_to_date_gbp": 3416087.78,
+          "allocated_gbp": 3416087.78,
+          "unallocated_gbp": 0.0,
+          "checks": {
+            "received_minus_allocated_equals_unallocated": true
+          }
+        }
+      }
+    },
+    "2022/23": {
+      "financial_year": "2022/23",
+      "source": {
+        "file": "infrastructure_funding_statement_2022-2023.pdf",
+        "sha256": "33bd25b4f83e361feebf8126b885d06693105fa78c7626cb0a85d148afea40d6",
+        "pages": 21,
+        "publisher": "Sheffield City Council",
+        "document": "Annual Infrastructure Funding Statement (CIL and Section 106)"
+      },
+      "figures": {
+        "s106_receipts_in_year": {
+          "page": 13,
+          "quote": "can be viewed online at https://planningapps.sheffield.gov.uk/online-applications/. 4.10 The total amount of Section 106 receipts in the reporting year 2022/23 was \u00a32,022,687.59, which is a decrease of 23.5% compared to the previous year. This reflects the effects of the pandemic, the increase in materials and interest rates,",
+          "stated_year": "2022/23",
+          "stated_change": "decrease of 23.5%",
+          "printed": "\u00a32,022,687.59",
+          "value_gbp": 2022687.59
+        },
+        "s106_agreements_signed": {
+          "page": 13,
+          "quote": "detailed below in paragraphs 4.7 to 4.31. 4.7 S106 agreements contributions received 4.8 Eight S106 agreements were signed in 2022/23 with potential future receipts of \u00a3136,771.33, becoming due once the developments have commenced. This figure does not consider indexat",
+          "count": 8,
+          "stated_year": "2022/23",
+          "basis": "agreements signed in the year, as worded that year",
+          "printed": "\u00a3136,771.33",
+          "value_gbp": 136771.33
+        },
+        "s106_balance_retained": {
+          "page": 17,
+          "quote": ".31 As a result of the receipts and expenditure set out in paragraphs 4.10 to 4.27 above, the amount retained at the end of 2022/23 was \u00a319,404,662.79. Although spend was still relatively low this year, due to project delays, this is expect",
+          "stated_year": "2022/23",
+          "printed": "\u00a319,404,662.79",
+          "value_gbp": 19404662.79
+        },
+        "s106_monitoring_cost": {
+          "page": 17,
+          "quote": "nistration 4.27 The amount of planning obligation money collected and spent in respect of monitoring of Section 106 agreements in 2022/23 is \u00a312,797.30. 4.28 Non-monetary S106 agreements 4.29 The Council has agreed 4 non-monetary S106 agreem",
+          "stated_year": null,
+          "printed": "\u00a312,797.30",
+          "value_gbp": 12797.3
+        },
+        "cil_received_in_year": {
+          "page": 8,
+          "quote": "surcharges amount (\u00a374,208.47) and total late payment interest accrued (\u00a352,094.06). 3.8 The total amount of CIL received in the reporting year 2022/23 was \u00a34,150,458.12. Table 1 below shows all CIL received, up to and including the reporting year, and what r",
+          "stated_year": "2022/23",
+          "printed": "\u00a34,150,458.12",
+          "value_gbp": 4150458.12
+        },
+        "cil_demand_notices_issued": {
+          "page": 8,
+          "quote": "Page 8 of 21 value of demand notices issued in 2022/23 is \u00a33,000,276.92. This is made up of the total amount of all liability notices (\u00a32,873,974.39), total surc",
+          "stated_year": "2022/23",
+          "printed": "\u00a33,000,276.92",
+          "value_gbp": 3000276.92
+        },
+        "cil_demand_liability_notices": {
+          "page": 8,
+          "quote": "Page 8 of 21 value of demand notices issued in 2022/23 is \u00a33,000,276.92. This is made up of the total amount of all liability notices (\u00a32,873,974.39), total surcharges amount (\u00a374,208.47) and total late payment interest accrued (\u00a352,094.0",
+          "stated_year": null,
+          "printed": "\u00a32,873,974.39",
+          "value_gbp": 2873974.39
+        },
+        "cil_demand_surcharges": {
+          "page": 8,
+          "quote": "Page 8 of 21 value of demand notices issued in 2022/23 is \u00a33,000,276.92. This is made up of the total amount of all liability notices (\u00a32,873,974.39), total surcharges amount (\u00a374,208.47) and total late payment interest accrued (\u00a352,094.06). 3.8 The total amount of CIL receiv",
+          "stated_year": null,
+          "printed": "\u00a374,208.47",
+          "value_gbp": 74208.47
+        },
+        "cil_demand_interest": {
+          "page": 8,
+          "quote": "Page 8 of 21 value of demand notices issued in 2022/23 is \u00a33,000,276.92. This is made up of the total amount of all liability notices (\u00a32,873,974.39), total surcharges amount (\u00a374,208.47) and total late payment interest accrued (\u00a352,094.06). 3.8 The total amount of CIL received in the reporting year 2022/23 was \u00a34,150,458.12. T",
+          "stated_year": null,
+          "printed": "\u00a352,094.06",
+          "value_gbp": 52094.06
+        }
+      },
+      "corrections": [],
+      "checks": {
+        "demand_notice_components": {
+          "stated_total": 3000276.92,
+          "sum_of_components": 3000276.92,
+          "difference_gbp": -0.0,
+          "ties": true
+        },
+        "cil_table1_rows_tie": true
+      },
+      "cil_cumulative_table": {
+        "_page": 8,
+        "strategic": {
+          "received_to_date_gbp": 23069076.3,
+          "allocated_gbp": 17980061.34,
+          "unallocated_gbp": 5089014.96,
+          "checks": {
+            "received_minus_allocated_equals_unallocated": true
+          }
+        },
+        "neighbourhood": {
+          "received_to_date_gbp": 4030564.55,
+          "allocated_gbp": 4030564.55,
+          "unallocated_gbp": 0.0,
+          "checks": {
+            "received_minus_allocated_equals_unallocated": true
+          }
+        }
+      }
+    },
+    "2023/24": {
+      "financial_year": "2023/24",
+      "source": {
+        "file": "ifs_report_sheffieldcitycouncil_2023_2024.pdf",
+        "sha256": "c630940e3170d310cb7e6819147d62f57048c0ed83aa6cadb4fd68d1e7fc5e17",
+        "pages": 22,
+        "publisher": "Sheffield City Council",
+        "document": "Annual Infrastructure Funding Statement (CIL and Section 106)"
+      },
+      "figures": {
+        "s106_receipts_in_year": {
+          "page": 13,
+          "quote": "can be viewed online at https://planningapps.sheffield.gov.uk/online-applications/. 4.10 The total amount of Section 106 receipts in the reporting year 2023/24 was \u00a3135,147.07, which is a decrease of 93% compared to the previous year. This reflects factors such as the increase in materials and interest rates, slowing the",
+          "stated_year": "2023/24",
+          "stated_change": "decrease of 93%",
+          "printed": "\u00a3135,147.07",
+          "value_gbp": 135147.07
+        },
+        "s106_agreements_signed_including_variations": {
+          "page": 13,
+          "quote": "detailed below in paragraphs 4.7 to 4.29. 4.7 S106 agreements contributions received 4.8 There have been 24 S106 agreements (including deed of variations and supplemental deeds) signed in 2023/24 with potential future receipts of \u00a31,234,373.54, becoming due once the developments have commenced. This figure does not consider indexat",
+          "count": 24,
+          "stated_year": "2023/24",
+          "basis": "new agreements plus deeds of variation and supplemental deeds",
+          "printed": "\u00a31,234,373.54",
+          "value_gbp": 1234373.54
+        },
+        "s106_balance_retained": {
+          "page": 19,
+          "quote": ".31 As a result of the receipts and expenditure set out in paragraphs 4.10 to 4.29 above, the amount retained at the end of 2023/24 was \u00a318,305,730.24. Spend was still relatively low this year, due to project delays. \u00a313.6m is committed to",
+          "stated_year": "2023/24",
+          "printed": "\u00a318,305,730.24",
+          "value_gbp": 18305730.24
+        },
+        "s106_committed_next_5_years": {
+          "page": 19,
+          "quote": "3/24 was \u00a318,305,730.24. Spend was still relatively low this year, due to project delays. \u00a313.6m is committed to schemes over the next 5 years, with the remaining \u00a34.7m available to be allocated towards future projects, in accordanc",
+          "value_gbp": 13600000.0,
+          "precision": "the statement rounds this to the nearest \u00a30.1m"
+        },
+        "s106_available_to_allocate": {
+          "page": 19,
+          "quote": "ar, due to project delays. \u00a313.6m is committed to schemes over the next 5 years, with the remaining \u00a34.7m available to be allocated towards future projects, in accordance with the requirements defined within the Section 1",
+          "value_gbp": 4700000.0,
+          "precision": "the statement rounds this to the nearest \u00a30.1m"
+        },
+        "s106_monitoring_cost": {
+          "page": 18,
+          "quote": "nistration 4.27 The amount of planning obligation money collected and spent in respect of monitoring and reporting of Section 106 agreements in 2023/24 is \u00a35,456.90. 4.28 Non-monetary S106 agreements 4.29 The Council has agreed 8 non-monetary S106 agreem",
+          "stated_year": null,
+          "printed": "\u00a35,456.90",
+          "value_gbp": 5456.9
+        },
+        "cil_received_in_year": {
+          "page": 8,
+          "quote": "surcharges amount (\u00a363,348.58) and total late payment interest accrued (\u00a357,186.32). 3.8 The total amount of CIL received in the reporting year 2023/24 was \u00a32,920,193.60. Table 1 below shows all CIL received, up to and including the reporting year, and what r",
+          "stated_year": "2023/24",
+          "printed": "\u00a32,920,193.60",
+          "value_gbp": 2920193.6
+        },
+        "cil_demand_notices_issued": {
+          "page": 8,
+          "quote": "Page 8 of 22 value of demand notices issued in 2023/24 is \u00a33,589,905.65. This is made up of the total amount of all liability notices (\u00a33,469,370.75), total surc",
+          "stated_year": "2023/24",
+          "printed": "\u00a33,589,905.65",
+          "value_gbp": 3589905.65
+        },
+        "cil_demand_liability_notices": {
+          "page": 8,
+          "quote": "Page 8 of 22 value of demand notices issued in 2023/24 is \u00a33,589,905.65. This is made up of the total amount of all liability notices (\u00a33,469,370.75), total surcharges amount (\u00a363,348.58) and total late payment interest accrued (\u00a357,186.3",
+          "stated_year": null,
+          "printed": "\u00a33,469,370.75",
+          "value_gbp": 3469370.75
+        },
+        "cil_demand_surcharges": {
+          "page": 8,
+          "quote": "Page 8 of 22 value of demand notices issued in 2023/24 is \u00a33,589,905.65. This is made up of the total amount of all liability notices (\u00a33,469,370.75), total surcharges amount (\u00a363,348.58) and total late payment interest accrued (\u00a357,186.32). 3.8 The total amount of CIL receiv",
+          "stated_year": null,
+          "printed": "\u00a363,348.58",
+          "value_gbp": 63348.58
+        },
+        "cil_demand_interest": {
+          "page": 8,
+          "quote": "Page 8 of 22 value of demand notices issued in 2023/24 is \u00a33,589,905.65. This is made up of the total amount of all liability notices (\u00a33,469,370.75), total surcharges amount (\u00a363,348.58) and total late payment interest accrued (\u00a357,186.32). 3.8 The total amount of CIL received in the reporting year 2023/24 was \u00a32,920,193.60. T",
+          "stated_year": null,
+          "printed": "\u00a357,186.32",
+          "value_gbp": 57186.32
+        }
+      },
+      "corrections": [],
+      "checks": {
+        "balance_equals_committed_plus_available": {
+          "balance": 18305730.24,
+          "committed_plus_available": 18300000.0,
+          "difference_gbp": 5730.24,
+          "note": "the committed and available figures are each rounded to \u00a30.1m, so a difference of up to \u00a3100,000 is expected",
+          "within_rounding": true
+        },
+        "demand_notice_components": {
+          "stated_total": 3589905.65,
+          "sum_of_components": 3589905.65,
+          "difference_gbp": 0.0,
+          "ties": true
+        },
+        "cil_table1_rows_tie": true
+      },
+      "cil_cumulative_table": {
+        "_page": 8,
+        "strategic": {
+          "received_to_date_gbp": 25547365.3,
+          "allocated_gbp": 17937200.16,
+          "unallocated_gbp": 7610165.14,
+          "checks": {
+            "received_minus_allocated_equals_unallocated": true
+          }
+        },
+        "neighbourhood": {
+          "received_to_date_gbp": 4472469.16,
+          "allocated_gbp": 4472469.16,
+          "unallocated_gbp": 0.0,
+          "checks": {
+            "received_minus_allocated_equals_unallocated": true
+          }
+        }
+      }
+    },
+    "2024/25": {
+      "financial_year": "2024/25",
+      "source": {
+        "file": "infrastructure_funding_statement_2024_to_2025.pdf",
+        "sha256": "aa5416dfe1b690a1b9a9e17c0f9b879c53bcbaaf746d37ebfb0c51c7d96d5d97",
+        "pages": 24,
+        "publisher": "Sheffield City Council",
+        "document": "Annual Infrastructure Funding Statement (CIL and Section 106)"
+      },
+      "figures": {
+        "s106_receipts_in_year": {
+          "page": 15,
+          "quote": "can be viewed online at https://planningapps.sheffield.gov.uk/online-applications/. 4.10 The total amount of Section 106 receipts in the reporting year 2024/25 was \u00a31,214,357.23, which is an increase of 798.5% compared to the previous year, with larger receipts coming from Education, Ecology and Affordable Housing contributions",
+          "stated_year": "2024/25",
+          "stated_change": "increase of 798.5%",
+          "printed": "\u00a31,214,357.23",
+          "value_gbp": 1214357.23
+        },
+        "s106_agreements_signed_including_variations": {
+          "page": 15,
+          "quote": "detailed below in paragraphs 4.7 to 4.29. 4.7 S106 agreements contributions received 4.8 There have been 9 S106 agreements (including deed of variations and supplemental deeds) signed in 2024/25 with potential future receipts of \u00a3352,501.69, becoming due once the developments have commenced. This figure does not consider indexat",
+          "count": 9,
+          "stated_year": "2024/25",
+          "basis": "new agreements plus deeds of variation and supplemental deeds",
+          "printed": "\u00a3352,501.69",
+          "value_gbp": 352501.69
+        },
+        "s106_balance_retained": {
+          "page": 21,
+          "quote": ".29 As a result of the receipts and expenditure set out in paragraphs 4.10 to 4.27 above, the amount retained at the end of 2024/25 was \u00a315,3251,204.79. Spend significantly increased this year, due to projects commencing. \u00a310.7m is committed",
+          "stated_year": "2024/25",
+          "printed": "\u00a315,3251,204.79",
+          "value_gbp": null,
+          "correction": {
+            "printed_verbatim": "\u00a315,3251,204.79",
+            "reason": "the published figure is not a well-formed number: one stray digit inside a comma group",
+            "candidates": [
+              15251204.79,
+              15321204.79,
+              15325204.79,
+              15351204.79
+            ],
+            "range_gbp": [
+              15251204.79,
+              15351204.79
+            ],
+            "eliminated": "reading the digits without the stray character as \u00a3153,251,204.79 is ruled out by the same paragraph, which splits the balance as \u00a310.7m committed plus \u00a34.7m available"
+          }
+        },
+        "s106_committed_next_5_years": {
+          "page": 21,
+          "quote": "was \u00a315,3251,204.79. Spend significantly increased this year, due to projects commencing. \u00a310.7m is committed to schemes over the next 5 years, with the remaining \u00a34.7m available to be allocated towards future projects, in accordanc",
+          "value_gbp": 10700000.0,
+          "precision": "the statement rounds this to the nearest \u00a30.1m"
+        },
+        "s106_available_to_allocate": {
+          "page": 21,
+          "quote": "ue to projects commencing. \u00a310.7m is committed to schemes over the next 5 years, with the remaining \u00a34.7m available to be allocated towards future projects, in accordance with the requirements defined within the Section 1",
+          "value_gbp": 4700000.0,
+          "precision": "the statement rounds this to the nearest \u00a30.1m"
+        },
+        "s106_monitoring_cost": {
+          "page": 20,
+          "quote": "nistration 4.25 The amount of planning obligation money collected and spent in respect of monitoring and reporting of Section 106 agreements in 2024/25 is \u00a33,703.74. 4.26 Non-monetary S106 agreements 4.27 The Council has agreed 3 non-monetary S106 agreem",
+          "stated_year": null,
+          "printed": "\u00a33,703.74",
+          "value_gbp": 3703.74
+        },
+        "cil_received_in_year": {
+          "page": 8,
+          "quote": "total surcharges (\u00a3100,737.31), and total late payment interest accrued (\u00a385,339.64). 3.8 The total amount of CIL received in the reporting year 2024/25 was \u00a32,579,360.54. Table 1 below shows all CIL received, up to and including the reporting year, and what r",
+          "stated_year": "2024/25",
+          "printed": "\u00a32,579,360.54",
+          "value_gbp": 2579360.54
+        },
+        "cil_demand_notices_issued": {
+          "page": 8,
+          "quote": "Page 8 of 24 value of demand notices issued in 2024/25 is \u00a32,397,632.32. This is made up of the total amount of all liability notices (\u00a32,211,555.37), total surc",
+          "stated_year": "2024/25",
+          "printed": "\u00a32,397,632.32",
+          "value_gbp": 2397632.32
+        },
+        "cil_demand_liability_notices": {
+          "page": 8,
+          "quote": "Page 8 of 24 value of demand notices issued in 2024/25 is \u00a32,397,632.32. This is made up of the total amount of all liability notices (\u00a32,211,555.37), total surcharges (\u00a3100,737.31), and total late payment interest accrued (\u00a385,339.64). 3",
+          "stated_year": null,
+          "printed": "\u00a32,211,555.37",
+          "value_gbp": 2211555.37
+        },
+        "cil_demand_surcharges": {
+          "page": 8,
+          "quote": "Page 8 of 24 value of demand notices issued in 2024/25 is \u00a32,397,632.32. This is made up of the total amount of all liability notices (\u00a32,211,555.37), total surcharges (\u00a3100,737.31), and total late payment interest accrued (\u00a385,339.64). 3.8 The total amount of CIL recei",
+          "stated_year": null,
+          "printed": "\u00a3100,737.31",
+          "value_gbp": 100737.31
+        },
+        "cil_demand_interest": {
+          "page": 8,
+          "quote": "Page 8 of 24 value of demand notices issued in 2024/25 is \u00a32,397,632.32. This is made up of the total amount of all liability notices (\u00a32,211,555.37), total surcharges (\u00a3100,737.31), and total late payment interest accrued (\u00a385,339.64). 3.8 The total amount of CIL received in the reporting year 2024/25 was \u00a32,579,360.54. T",
+          "stated_year": null,
+          "printed": "\u00a385,339.64",
+          "value_gbp": 85339.64
+        }
+      },
+      "corrections": [
+        {
+          "figures.s106_balance_retained": {
+            "printed_verbatim": "\u00a315,3251,204.79",
+            "reason": "the published figure is not a well-formed number: one stray digit inside a comma group",
+            "candidates": [
+              15251204.79,
+              15321204.79,
+              15325204.79,
+              15351204.79
+            ],
+            "range_gbp": [
+              15251204.79,
+              15351204.79
+            ],
+            "eliminated": "reading the digits without the stray character as \u00a3153,251,204.79 is ruled out by the same paragraph, which splits the balance as \u00a310.7m committed plus \u00a34.7m available"
+          }
+        }
+      ],
+      "checks": {
+        "demand_notice_components": {
+          "stated_total": 2397632.32,
+          "sum_of_components": 2397632.32,
+          "difference_gbp": -0.0,
+          "ties": true
+        },
+        "cil_table1_rows_tie": true
+      },
+      "cil_cumulative_table": {
+        "_page": 8,
+        "strategic": {
+          "received_to_date_gbp": 27698428.83,
+          "allocated_gbp": 18485399.9,
+          "unallocated_gbp": 9213028.93,
+          "checks": {
+            "received_minus_allocated_equals_unallocated": true
+          }
+        },
+        "neighbourhood": {
+          "received_to_date_gbp": 4847850.0,
+          "allocated_gbp": 4847850.0,
+          "unallocated_gbp": 0.0,
+          "checks": {
+            "received_minus_allocated_equals_unallocated": true
+          }
+        }
+      }
+    }
+  },
+  "series": [
+    {
+      "financial_year": "2019/20",
+      "s106_receipts_gbp": 3504340.0,
+      "s106_balance_retained_gbp": 17575274.0,
+      "s106_balance_retained_range_gbp": null,
+      "s106_agreements_signed": 15,
+      "s106_agreements_basis": "agreements signed in the year, as worded that year",
+      "s106_future_receipts_gbp": 2714346.0,
+      "s106_monitoring_cost_gbp": 59837.0,
+      "cil_received_gbp": 4481827.0,
+      "cil_received_to_date_gbp": 13972248.0,
+      "cil_unallocated_gbp": 0.0,
+      "developer_contributions_received_gbp": 7986167.0,
+      "unspent_at_year_end_gbp": 17575274.0,
+      "unspent_at_year_end_range_gbp": null,
+      "source_page_balance": 12,
+      "source_file": "ifs-report-2019-2020.pdf",
+      "source_sha256": "b48271d5883a7efed8f49289b28ce7cfb743ca7eabfd29cf99d6f4d36909b6d2"
+    },
+    {
+      "financial_year": "2020/21",
+      "s106_receipts_gbp": 3260284.0,
+      "s106_balance_retained_gbp": 18958520.0,
+      "s106_balance_retained_range_gbp": null,
+      "s106_agreements_signed": 17,
+      "s106_agreements_basis": "agreements signed in the year, as worded that year",
+      "s106_future_receipts_gbp": 1535254.0,
+      "s106_monitoring_cost_gbp": 5159.0,
+      "cil_received_gbp": 3252851.33,
+      "cil_received_to_date_gbp": 18044813.39,
+      "cil_unallocated_gbp": 1305480.9,
+      "developer_contributions_received_gbp": 6513135.33,
+      "unspent_at_year_end_gbp": 20264000.9,
+      "unspent_at_year_end_range_gbp": null,
+      "source_page_balance": 16,
+      "source_file": "ifs-report-2020-2021.pdf",
+      "source_sha256": "166d35d706b5bc45b007888410d474a519e26ef1cf15e61fc861dd1dbf285407"
+    },
+    {
+      "financial_year": "2021/22",
+      "s106_receipts_gbp": 2561641.29,
+      "s106_balance_retained_gbp": 18151110.0,
+      "s106_balance_retained_range_gbp": null,
+      "s106_agreements_signed": 13,
+      "s106_agreements_basis": "agreements signed in the year, as worded that year",
+      "s106_future_receipts_gbp": 1084094.77,
+      "s106_monitoring_cost_gbp": 9750.0,
+      "cil_received_gbp": 4872812.91,
+      "cil_received_to_date_gbp": 22949182.74,
+      "cil_unallocated_gbp": 5307947.32,
+      "developer_contributions_received_gbp": 7434454.2,
+      "unspent_at_year_end_gbp": 23459057.32,
+      "unspent_at_year_end_range_gbp": null,
+      "source_page_balance": 17,
+      "source_file": "infrastructure_funding_statement_2021-2022.pdf",
+      "source_sha256": "ae4974f4511dd0c99c837b19098f5351c9b8786602a43b7bd04eb5603a2bd1c9"
+    },
+    {
+      "financial_year": "2022/23",
+      "s106_receipts_gbp": 2022687.59,
+      "s106_balance_retained_gbp": 19404662.79,
+      "s106_balance_retained_range_gbp": null,
+      "s106_agreements_signed": 8,
+      "s106_agreements_basis": "agreements signed in the year, as worded that year",
+      "s106_future_receipts_gbp": 136771.33,
+      "s106_monitoring_cost_gbp": 12797.3,
+      "cil_received_gbp": 4150458.12,
+      "cil_received_to_date_gbp": 27099640.85,
+      "cil_unallocated_gbp": 5089014.96,
+      "developer_contributions_received_gbp": 6173145.71,
+      "unspent_at_year_end_gbp": 24493677.75,
+      "unspent_at_year_end_range_gbp": null,
+      "source_page_balance": 17,
+      "source_file": "infrastructure_funding_statement_2022-2023.pdf",
+      "source_sha256": "33bd25b4f83e361feebf8126b885d06693105fa78c7626cb0a85d148afea40d6"
+    },
+    {
+      "financial_year": "2023/24",
+      "s106_receipts_gbp": 135147.07,
+      "s106_balance_retained_gbp": 18305730.24,
+      "s106_balance_retained_range_gbp": null,
+      "s106_agreements_signed": 24,
+      "s106_agreements_basis": "new agreements plus deeds of variation and supplemental deeds",
+      "s106_future_receipts_gbp": 1234373.54,
+      "s106_monitoring_cost_gbp": 5456.9,
+      "cil_received_gbp": 2920193.6,
+      "cil_received_to_date_gbp": 30019834.46,
+      "cil_unallocated_gbp": 7610165.14,
+      "developer_contributions_received_gbp": 3055340.67,
+      "unspent_at_year_end_gbp": 25915895.38,
+      "unspent_at_year_end_range_gbp": null,
+      "source_page_balance": 19,
+      "source_file": "ifs_report_sheffieldcitycouncil_2023_2024.pdf",
+      "source_sha256": "c630940e3170d310cb7e6819147d62f57048c0ed83aa6cadb4fd68d1e7fc5e17"
+    },
+    {
+      "financial_year": "2024/25",
+      "s106_receipts_gbp": 1214357.23,
+      "s106_balance_retained_gbp": null,
+      "s106_balance_retained_range_gbp": [
+        15251204.79,
+        15351204.79
+      ],
+      "s106_agreements_signed": 9,
+      "s106_agreements_basis": "new agreements plus deeds of variation and supplemental deeds",
+      "s106_future_receipts_gbp": 352501.69,
+      "s106_monitoring_cost_gbp": 3703.74,
+      "cil_received_gbp": 2579360.54,
+      "cil_received_to_date_gbp": 32546278.83,
+      "cil_unallocated_gbp": 9213028.93,
+      "developer_contributions_received_gbp": 3793717.77,
+      "unspent_at_year_end_gbp": null,
+      "unspent_at_year_end_range_gbp": [
+        24464233.72,
+        24564233.72
+      ],
+      "source_page_balance": 21,
+      "source_file": "infrastructure_funding_statement_2024_to_2025.pdf",
+      "source_sha256": "aa5416dfe1b690a1b9a9e17c0f9b879c53bcbaaf746d37ebfb0c51c7d96d5d97"
+    }
+  ],
+  "trend": {
+    "from_year": "2019/20",
+    "to_year": "2024/25",
+    "received_from_gbp": 7986167.0,
+    "received_to_gbp": 3793717.77,
+    "received_change_pct": -52.5,
+    "unspent_from_gbp": 17575274.0,
+    "unspent_to_gbp": 24464233.72,
+    "unspent_change_pct": 39.2
+  }
+}

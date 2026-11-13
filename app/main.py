@@ -170,6 +170,30 @@ async def published_ground_truth():
     return json.loads(path.read_text())
 
 
+@app.get("/api/sheffield-position")
+async def sheffield_reported_position():
+    """
+    What Sheffield City Council says about its own developer contributions, in its
+    own statutory Infrastructure Funding Statements, 2019/20 to 2024/25.
+
+    Sheffield publishes nothing to the national developer-contribution dataset, so
+    these six statements are the only published account of what the council has
+    received and what it is holding. Built by
+    scripts.fetch_sheffield_ifs_series, which quotes each figure out of the PDF and
+    re-checks the arithmetic the council asserts for itself.
+    """
+    path = REPO_ROOT / "data" / "fixtures" / "pdfs" / "sheffield" / "ifs_series.json"
+    if not path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "Sheffield series not built. Run "
+                "`python3 -m scripts.fetch_sheffield_ifs_series`."
+            ),
+        )
+    return json.loads(path.read_text())
+
+
 @app.get("/api/wards")
 async def list_ward_summaries():
     """Return Sheffield Electoral Ward PostGIS GeoJSON polygons and S106 financial rollups."""

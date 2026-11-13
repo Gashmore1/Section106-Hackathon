@@ -353,6 +353,54 @@
       </div>
     </section>
 
+    <!-- What Sheffield itself reports -->
+    <section class="px-5 py-3">
+      <div class="panel p-4">
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-2">
+          <div>
+            <h2 class="text-sm font-semibold panel-title">What Sheffield reports about itself</h2>
+            <p class="text-[11px] muted mt-0.5" id="ovShefSub">—</p>
+          </div>
+          <div class="text-[11px] faint text-right max-w-[30rem]" id="ovShefNote"></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+          <div class="panel p-3" style="background: var(--panel-2)">
+            <div class="text-[11px] uppercase tracking-wide font-medium muted">Collected in 2024/25</div>
+            <div id="ovShefCollected" class="text-3xl font-bold mt-1 leading-tight" style="color: var(--text)">—</div>
+            <div class="text-[11px] mt-1 muted" id="ovShefCollectedNote"></div>
+          </div>
+          <div class="panel p-3" style="background: var(--panel-2)">
+            <div class="text-[11px] uppercase tracking-wide font-medium muted">Unspent at 31 Mar 2025</div>
+            <div id="ovShefUnspent" class="text-3xl font-bold mt-1 leading-tight" style="color: var(--text)">—</div>
+            <div class="text-[11px] mt-1 muted" id="ovShefUnspentNote"></div>
+          </div>
+          <div class="panel p-3" style="background: var(--panel-2)">
+            <div class="text-[11px] uppercase tracking-wide font-medium muted">Change since 2019/20</div>
+            <div id="ovShefTrend" class="text-3xl font-bold mt-1 leading-tight" style="color: var(--text)">—</div>
+            <div class="text-[11px] mt-1 muted" id="ovShefTrendNote"></div>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="ledger" style="min-width: 940px">
+            <thead>
+              <tr>
+                <th style="width:11%">Financial year</th>
+                <th class="num">S106 received</th>
+                <th class="num">CIL received</th>
+                <th class="num">Total received</th>
+                <th class="num">S106 held at year end</th>
+                <th class="num">CIL unallocated</th>
+                <th class="num">Total unspent</th>
+                <th class="num">S106 deeds signed</th>
+              </tr>
+            </thead>
+            <tbody id="ovShefBody"></tbody>
+          </table>
+        </div>
+        <div id="ovShefCaveats" class="mt-3 pt-3 hairline border-t text-[11px] muted"></div>
+      </div>
+    </section>
+
     <!-- The deeds we read -->
     <section class="px-5 py-3">
       <div class="panel p-4">
@@ -839,7 +887,114 @@
 
     async function loadOverview() {
       // Independent panels, so one slow or missing endpoint cannot hold up the rest.
-      await Promise.allSettled([loadNational(), loadGroundTruthOverview(), loadOverviewDeeds()]);
+      await Promise.allSettled([
+        loadNational(), loadSheffieldPosition(), loadGroundTruthOverview(), loadOverviewDeeds(),
+      ]);
+    }
+
+    // A ledger cell that distinguishes "zero" from "the document did not say".
+    function n0(val) {
+      return val == null ? "—" : fmtGBP0(val);
+    }
+
+    // A figure that may be a range because the published document contains a typo.
+    function moneyOrRange(value, range) {
+      if (value != null) return fmtGBPshort(value);
+      if (Array.isArray(range)) return `${fmtGBPshort(range[0])} – ${fmtGBPshort(range[1])}`;
+      return "—";
+    }
+
+    async function loadSheffieldPosition() {
+      const sub = document.getElementById("ovShefSub");
+      let res;
+      try {
+        res = await fetch("/api/sheffield-position");
+      } catch (err) {
+        sub.textContent = "Sheffield statements unreadable: " + err.message;
+        return;
+      }
+      if (!res.ok) {
+        sub.textContent =
+          "Sheffield series not built yet — run `python3 -m scripts.fetch_sheffield_ifs_series`.";
+        return;
+      }
+      const d = await res.json();
+      const rows = d.series || [];
+      const trend = d.trend || {};
+      if (!rows.length) {
+        sub.textContent = "No years extracted.";
+        return;
+      }
+      const last = rows[rows.length - 1];
+      const first = rows[0];
+
+      sub.textContent =
+        `Six annual Infrastructure Funding Statements the council must publish by law, ` +
+        `${first.financial_year} to ${last.financial_year}, read out of the council's own PDFs`;
+      document.getElementById("ovShefNote").textContent =
+        "Sheffield publishes nothing to the national developer-contribution dataset, so these " +
+        "statements are the only account of what the council has received and what it is holding.";
+
+      document.getElementById("ovShefCollected").textContent =
+        fmtGBPshort(last.developer_contributions_received_gbp);
+      document.getElementById("ovShefCollectedNote").textContent =
+        `Section 106 ${fmtGBPshort(last.s106_receipts_gbp)} plus CIL ` +
+        `${fmtGBPshort(last.cil_received_gbp)}, in ${last.financial_year}`;
+
+      document.getElementById("ovShefUnspent").textContent =
+        moneyOrRange(last.unspent_at_year_end_gbp, last.unspent_at_year_end_range_gbp);
+      document.getElementById("ovShefUnspentNote").textContent =
+        `S106 balance the council retained (${moneyOrRange(last.s106_balance_retained_gbp, last.s106_balance_retained_range_gbp)}) ` +
+        `plus CIL collected and not yet allocated (${fmtGBPshort(last.cil_unallocated_gbp)})`;
+
+      if (trend.received_change_pct != null) {
+        const arrow = (p) => `${p > 0 ? "▲" : "▼"} ${Math.abs(p)}%`;
+        document.getElementById("ovShefTrend").textContent =
+          `${arrow(trend.received_change_pct)} collected`;
+        document.getElementById("ovShefTrendNote").textContent =
+          `Money coming in fell from ${fmtGBPshort(trend.received_from_gbp)} in ${trend.from_year} to ` +
+          `${fmtGBPshort(trend.received_to_gbp)} in ${trend.to_year}` +
+          (trend.unspent_change_pct != null
+            ? `, while the money sitting unspent rose ${Math.abs(trend.unspent_change_pct)}% to ` +
+              `${fmtGBPshort(trend.unspent_to_gbp)}.`
+            : ".");
+      }
+
+      const body = document.getElementById("ovShefBody");
+      body.innerHTML = rows.map((r) => `
+        <tr>
+          <td>${esc(r.financial_year)}</td>
+          <td class="num">${n0(r.s106_receipts_gbp)}</td>
+          <td class="num">${n0(r.cil_received_gbp)}</td>
+          <td class="num">${n0(r.developer_contributions_received_gbp)}</td>
+          <td class="num">${moneyOrRange(r.s106_balance_retained_gbp, r.s106_balance_retained_range_gbp)}</td>
+          <td class="num">${n0(r.cil_unallocated_gbp)}</td>
+          <td class="num">${moneyOrRange(r.unspent_at_year_end_gbp, r.unspent_at_year_end_range_gbp)}</td>
+          <td class="num">${r.s106_agreements_signed == null ? "—" : esc(r.s106_agreements_signed)}</td>
+        </tr>`).join("");
+
+      const caveats = [];
+      const typo = rows.find((r) => r.s106_balance_retained_range_gbp);
+      if (typo) {
+        caveats.push(
+          `<b>${esc(typo.financial_year)} S106 balance.</b> The council's own statement prints it as ` +
+          `£15,3251,204.79, which is not a number. Reading the digits as printed gives £153m, which the ` +
+          `same paragraph rules out by splitting the balance as £10.7m committed plus £4.7m available. ` +
+          `The four single-character readings span £15.25m–£15.35m, so that is what is shown.`
+        );
+      }
+      caveats.push(
+        `<b>Deeds signed is not one measure.</b> Through 2022/23 the wording is "N S106 agreements were ` +
+        `signed"; from 2023/24 it is "N S106 agreements (including deed of variations and supplemental ` +
+        `deeds)". The jump to 24 is a change of definition, not a recovery in development.`
+      );
+      caveats.push(
+        `<b>CIL unallocated is a running balance, not a year's spending.</b> It is CIL received since the ` +
+        `levy began, less what has been allocated to a project. Neighbourhood CIL is included but has been ` +
+        `passed straight to town and parish councils and shows nil every year.`
+      );
+      document.getElementById("ovShefCaveats").innerHTML = caveats
+        .map((c) => `<div class="mt-1">• ${c}</div>`).join("");
     }
 
     async function loadNational() {
