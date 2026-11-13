@@ -144,6 +144,22 @@ DEFINED_SUM_PROSE_RE = re.compile(
 )
 
 
+def _deglue(name: str) -> str:
+    """OCR glues defined terms together: "AffordableHousing Contribution"."""
+    return re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name)
+
+
+# Scanned deeds OCR as `"Open Space Contribution"\nmeans the sum of180.760.00(one
+# hundred and`: no £ sign, separators that may be '.' or ',', the letter o inside
+# the digits, words in full-width brackets. The token is repaired by
+# agents.ocr.repair_amount, which decides pence from the shape of the token
+# (a final group of two digits) rather than from a locale.
+DEFINED_SUM_OCR_RE = re.compile(
+    r'["\u201c]([A-Z][^"\u201d]{3,80}?)["\u201d]\s*(?:\n\s*)?means\b[^";]{0,40}?'
+    r"the sum of\s*([£Ef]?\s?[\d.,oOlI]{3,20})",
+)
+
+
 def parse_defined_sums(deed_text: str) -> dict[str, float]:
     """
     Parse `"X Contribution" means the sum of £27,000.00` definitions straight out of
@@ -151,15 +167,38 @@ def parse_defined_sums(deed_text: str) -> dict[str, float]:
     pairs a name with a neighbouring sum, so the deterministic parse wins.
     """
     sums: dict[str, float] = {}
+
+    # OCR pass first: on a scan it is the only one that matches, and running it
+    # first means a partial match from the strict patterns cannot win with a
+    # truncated value like 565.00 for a £565,000 obligation.
+    try:
+        from agents.ocr import repair_amount
+
+        for name, amount in DEFINED_SUM_OCR_RE.findall(deed_text):
+            clean = " ".join(_deglue(name).split()).strip(" .")
+            value = repair_amount(amount)
+            if not clean or value is None or value <= 0:
+                continue
+            if clean.lower().startswith(("this", "the deed")):
+                continue
+            sums.setdefault(clean, float(value))
+    except ImportError:
+        pass
+
     for pattern in (DEFINED_SUM_RE, DEFINED_SUM_PROSE_RE):
         for name, amount in pattern.findall(deed_text):
-            clean = " ".join(name.split()).strip(" .")
+            # Deglue here too, so a scanned term cannot be stored twice under a
+            # glued name with a truncated value.
+            clean = " ".join(_deglue(name).split()).strip(" .")
             if not clean or clean.lower().startswith(("this", "the deed")):
                 continue
             try:
-                sums.setdefault(clean, float(amount.replace(",", "")))
+                value = float(amount.replace(",", ""))
             except ValueError:
                 continue
+            if looks_mis_scaled(value, sums):
+                continue
+            sums.setdefault(clean, value)
     return sums
 
 
@@ -195,6 +234,29 @@ def match_defined_sum(title: str, defined: dict[str, float]) -> Optional[tuple[s
         if score and (best is None or score > best[0]):
             best = (score, name, amount)
     return (best[1], best[2]) if best else None
+
+
+def looks_mis_scaled(amount: float, catalogue: dict[str, float]) -> bool:
+    """
+    True when an amount is a decimal-shifted echo of a sum the deed actually
+    defines. This is the signature of an OCR separator read as a decimal point:
+    `180.760.00` became a £180.76 "Open Space Contribution" when the deed defines
+    £180,760.00. A wrong number in a financial auditor is worse than no number,
+    so such obligations are dropped and reported rather than rounded into place.
+    """
+    if amount <= 0 or not catalogue:
+        return False
+    known = {round(value, 2) for value in catalogue.values()}
+    if round(amount, 2) in known:
+        return False
+    if any(
+        abs(amount * factor - value) < 0.01
+        for factor in (10, 100, 1000, 10000, 100000)
+        for value in known
+    ):
+        return True
+    # No real section 106 contribution is worth pennies.
+    return amount < 50.0
 
 
 def pdf_page_text(pdf_path: Path) -> str:
@@ -421,6 +483,13 @@ def repair_payload(
         if amount <= 0:
             notes.append(
                 f"dropped '{title}': no sum in the deed attaches to it (model returned {amount})"
+            )
+            continue
+
+        if looks_mis_scaled(amount, defined_sums):
+            notes.append(
+                f"dropped '{title}': £{amount:,.2f} is a decimal-shifted echo of a sum the "
+                "deed defines, which is what an OCR separator misread looks like"
             )
             continue
 
