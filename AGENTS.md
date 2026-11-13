@@ -12,7 +12,7 @@ We are building an air-gapped, local multi-agent legal and financial auditing pi
 
 ## 2. Tech Stack & Environment Constraints
 - **Hardware Architecture:** `linux/arm64` (NVIDIA Grace CPU + Blackwell GB10 GPU, 128GB unified memory). **Never use `amd64`-only Docker images.**
-- **Local LLM Server:** vLLM serving an OpenAI-compatible API at `http://localhost:8000/v1` supporting structured outputs (`response_format` / `guided_json`).
+- **Local LLM Server:** Ollama (`http://localhost:11434/v1`) or vLLM (`http://localhost:8000/v1`) serving preloaded DGX Spark models (`qwen3.6:35b-a3b`, `nemotron-3.5-lightning:30b`, `nemotron-3-nano:30b`) with structured JSON schema outputs (`format=schema` / `response_format` / `guided_json`).
 - **Database:** PostgreSQL 16 with `postgis` and `pgvector` extensions (`postgresql+psycopg://spark:sparkpassword@localhost:5432/sheffield_s106`).
 - **Backend & Orchestration:** Python 3.11+, FastAPI (with Server-Sent Events for live agent telemetry), LangGraph, Pydantic v2, SQLAlchemy 2.0, PyMuPDF (`fitz`), `python-docx`.
 - **Frontend:** Split-screen dashboard (PDF Evidence Viewer + Financial Audit Ledger + Sheffield Ward PostGIS Map).

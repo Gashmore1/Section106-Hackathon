@@ -293,3 +293,9 @@ class DeveloperAgreementTransactionCSVRow(BaseModel):
     units: Optional[int] = None
     entry_date: date = Field(..., serialization_alias="entry-date")
     start_date: date = Field(..., serialization_alias="start-date")
+
+
+# Backward-compatible aliases matching early design docs
+ExtractedCovenant = ExtractedObligation
+ExtractionOutput = ExtractedAgreement
+FullAuditReport = AuditReport

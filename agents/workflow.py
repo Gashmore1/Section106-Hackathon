@@ -9,7 +9,12 @@ import uuid
 from datetime import datetime, timezone
 from typing import AsyncGenerator, Optional, TypedDict
 
-from agents.extractor import extract_s106_obligations_vllm
+from agents.extractor import (
+    VLLM_BASE_URL,
+    VLLM_MODEL_NAME,
+    _is_ollama_endpoint,
+    extract_s106_obligations_vllm,
+)
 from agents.pdf_parser import ParsedTextBlock, parse_s106_pdf
 from data.sql_tools import get_sheffield_ward_summaries, run_deterministic_audit
 from shared.schemas import (
@@ -131,10 +136,11 @@ async def stream_audit_workflow(
     )
     await asyncio.sleep(0.35)
 
+    backend_label = "Ollama" if _is_ollama_endpoint(VLLM_BASE_URL) else "vLLM"
     yield _make_event(
         "vllm_extractor",
         "STARTED",
-        "Querying local vLLM (Grace Blackwell GB10) with guided_json schema `ExtractedAgreement`...",
+        f"Querying local {backend_label} ({VLLM_MODEL_NAME} on Grace Blackwell GB10) with structured schema `ExtractedAgreement`...",
     )
     extracted = await extract_s106_obligations_vllm(
         blocks=blocks, planning_reference=planning_reference

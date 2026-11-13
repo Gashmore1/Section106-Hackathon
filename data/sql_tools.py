@@ -7,10 +7,25 @@ Automatically uses PostgreSQL 16 when reachable, with seamless fallback to the c
 from __future__ import annotations
 
 import json
+import logging
 from datetime import date, datetime, timezone
 from typing import Optional
 
 from sqlalchemy import select
+
+logger = logging.getLogger(__name__)
+_WARNED_DB_FALLBACK = False
+
+
+def _warn_db_fallback_once(exc: Exception) -> None:
+    """Emit a single clear warning if PostgreSQL is unreachable and seed fallback is used."""
+    global _WARNED_DB_FALLBACK
+    if not _WARNED_DB_FALLBACK:
+        _WARNED_DB_FALLBACK = True
+        logger.warning(
+            "[sql_tools] PostgreSQL unreachable (%s) — falling back to in-memory seed dataset.",
+            exc,
+        )
 
 from data.seed_db import (
     SEED_AGREEMENTS,
@@ -59,8 +74,8 @@ def _lookup_index_value(method: IndexationMethod, target_date: date) -> float:
             val = conn.execute(stmt).scalar_one_or_none()
             if val is not None:
                 return float(val)
-    except Exception:
-        pass
+    except Exception as exc:
+        _warn_db_fallback_once(exc)
 
     candidates = [
         r["index_value"]
@@ -129,8 +144,8 @@ def fetch_all_agreements() -> list[dict]:
             rows = conn.execute(select(S106AgreementRecord)).mappings().all()
             if rows:
                 return [dict(r) for r in rows]
-    except Exception:
-        pass
+    except Exception as exc:
+        _warn_db_fallback_once(exc)
     return [dict(a) for a in SEED_AGREEMENTS]
 
 
@@ -150,8 +165,8 @@ def fetch_obligations_for_agreement(planning_reference: str) -> list[dict]:
                     d["bbox"] = json.loads(d.pop("bbox_json", "{}") or "{}")
                     result.append(d)
                 return result
-    except Exception:
-        pass
+    except Exception as exc:
+        _warn_db_fallback_once(exc)
     return [
         dict(o)
         for o in SEED_OBLIGATIONS
@@ -284,8 +299,8 @@ def get_sheffield_ward_summaries() -> list[WardSummary]:
                     }
                     for r in rows
                 ]
-    except Exception:
-        pass
+    except Exception as exc:
+        _warn_db_fallback_once(exc)
 
     agreements = fetch_all_agreements()
     reports_by_ward: dict[str, list[AuditReport]] = {}

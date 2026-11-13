@@ -16,6 +16,12 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 
+from agents.extractor import (
+    AVAILABLE_SPARK_MODELS,
+    VLLM_BASE_URL,
+    VLLM_MODEL_NAME,
+    _is_ollama_endpoint,
+)
 from agents.workflow import stream_audit_workflow
 from data.sql_tools import (
     fetch_all_agreements,
@@ -58,7 +64,10 @@ async def health_check():
     return {
         "status": "ok",
         "architecture": "linux/arm64 (NVIDIA Grace Blackwell GB10)",
-        "vllm_endpoint": "http://localhost:8000/v1",
+        "llm_backend": "ollama" if _is_ollama_endpoint(VLLM_BASE_URL) else "vllm",
+        "llm_endpoint": VLLM_BASE_URL,
+        "active_model": VLLM_MODEL_NAME,
+        "available_spark_models": list(AVAILABLE_SPARK_MODELS),
         "statutory_csv_endpoints_ready": 3,
     }
 
