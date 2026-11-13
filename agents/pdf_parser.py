@@ -41,6 +41,33 @@ class ParsedTextBlock:
     bbox: BoundingBox
 
 
+def _ocr_blocks_for_page(page) -> list[ParsedTextBlock]:
+    """
+    OCR one image-only page into text blocks with bounding boxes. Returns nothing
+    when no local OCR engine is installed, so a machine without RapidOCR behaves
+    exactly as it did before rather than failing.
+    """
+    try:
+        from agents.ocr import needs_ocr, ocr_page
+    except ImportError:
+        return []
+    if not needs_ocr(page):
+        return []
+    try:
+        lines = ocr_page(page)
+    except Exception:  # an OCR engine that cannot run must not break the parse
+        return []
+    return [
+        ParsedTextBlock(
+            page_number=page.number + 1,
+            block_index=index,
+            text=line.text,
+            bbox=line.bbox,
+        )
+        for index, line in enumerate(lines)
+    ]
+
+
 def parse_s106_pdf(pdf_path: str | Path) -> list[ParsedTextBlock]:
     """
     Parse a Section 106 PDF deed using PyMuPDF (`fitz`) and extract all text blocks
@@ -63,6 +90,7 @@ def parse_s106_pdf(pdf_path: str | Path) -> list[ParsedTextBlock]:
             for page_idx, page in enumerate(doc):
                 page_num = page_idx + 1
                 raw_blocks = page.get_text("blocks")
+                blocks_before = len(blocks)
                 for b_idx, b in enumerate(raw_blocks):
                     x0, y0, x1, y1, text_content, *_ = b
                     cleaned = (text_content or "").strip()
@@ -82,6 +110,10 @@ def parse_s106_pdf(pdf_path: str | Path) -> list[ParsedTextBlock]:
                             ),
                         )
                     )
+                # Scanned deeds (most of Sheffield's register publications) have no
+                # text layer at all. OCR them locally rather than parsing an empty page.
+                if len(blocks) == blocks_before and page.get_images(full=True):
+                    blocks.extend(_ocr_blocks_for_page(page))
         finally:
             doc.close()
         return blocks
