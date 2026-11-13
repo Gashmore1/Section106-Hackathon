@@ -38,6 +38,9 @@ from data.sql_tools import (
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
 REPO_ROOT = Path(__file__).resolve().parent.parent
+NATIONAL_ANALYSIS_FILE = (
+    REPO_ROOT / "data" / "fixtures" / "csv" / "national" / "unpaid_analysis.json"
+)
 
 app = FastAPI(
     title="Sheffield Section 106 & Infrastructure Levy Autonomous Auditor",
@@ -118,6 +121,24 @@ async def portfolio_summary():
     numbers on screen are the same ones `/api/audit` produces deed by deed.
     """
     return get_portfolio_summary()
+
+
+@app.get("/api/national")
+async def national_unpaid_position():
+    """
+    The national developer-contribution position: what authorities published, what
+    arrived, and what did not. Built by scripts.analyse_national_unpaid from the
+    three statutory datasets on disk; every figure is a sum of published rows.
+    """
+    if not NATIONAL_ANALYSIS_FILE.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "National analysis not built. Run "
+                "`python3 -m scripts.analyse_national_unpaid`."
+            ),
+        )
+    return json.loads(NATIONAL_ANALYSIS_FILE.read_text())
 
 
 @app.get("/api/ground-truth")

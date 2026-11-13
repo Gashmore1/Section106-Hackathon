@@ -1,0 +1,13 @@
+{
+  "_comment": "entity id -> authority name for publishers in the national developer-contribution datasets. Only written where the identity was independently confirmed. planning.data.gov.uk returns 503 as of 2026-11-13, so the full 66-publisher mapping cannot be re-read right now; every entity not listed here is shown by entity id and marked unverified rather than guessed.",
+  "_sources": {
+    "organisation.csv": "read from https://www.planning.data.gov.uk/dataset/organisation.csv on 2026-11-13 while the service was responding",
+    "cross-check": "entity 402 publishes agreements with reference prefix 'NYM/' (e.g. NYM/2018/0732/FL-da), which is North York Moors, independently consistent with the organisation register"
+  },
+  "_generated": "2026-11-13",
+  "names": {
+    "294": "Sheffield City Council",
+    "283": "South Yorkshire Mayoral Combined Authority",
+    "402": "North York Moors National Park Authority"
+  }
+}

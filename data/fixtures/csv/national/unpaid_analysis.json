@@ -1,0 +1,1515 @@
+{
+  "_comment": "National developer-contribution position, computed from the published developer-agreement datasets on disk. Every figure is a sum of published rows; nothing here is modelled or estimated.",
+  "_generated": "2026-11-13",
+  "_definitions": {
+    "committed": "developer-agreement-contribution.amount",
+    "received": "the largest single stage among allocated, delivered, received, spent, transferred transaction amounts for that contribution. These are stages of the same money, so summing them would count one payment up to four times",
+    "outstanding": "max(0, committed - received) per contribution",
+    "never_received": "a contribution with a committed amount and no received transaction",
+    "secured_no_receipt": "a contribution with a `secured` transaction and no received transaction: the council has recorded the money as owed under a signed agreement and has not collected a penny of it. Not all of it is yet legally due - many obligations trigger on occupation of a later dwelling - but none of it is money the council has seen.",
+    "tie_out": "committed - received equals outstanding except where a contribution was paid more than once, which is floored to zero rather than netted against other contributions"
+  },
+  "sources": {
+    "developer-agreement-contribution.csv": {
+      "rows": 39428,
+      "sha256": "c6845421daf54f846097af4ccbd99c548948fef6f12fa00ee5bb4bc94bf4cff6"
+    },
+    "developer-agreement-transaction.csv": {
+      "rows": 51284,
+      "sha256": "95115cb039d8f3a99d12d1e7680d4011285eab596ac3a0bbb79abe9c56bbdbd0"
+    },
+    "developer-agreement.csv": {
+      "rows": 13391,
+      "sha256": "49d0c18b18f9ed67ef74b0c614b290673cd295a8c115c941d0f5b259e7185ab1"
+    },
+    "malformed_transactions_skipped": 10525,
+    "authority_names": "organisation_names.json"
+  },
+  "headline": {
+    "publishing_authorities": 66,
+    "priced_contributions": 27497,
+    "committed_gbp": 1451866887.48,
+    "received_gbp": 613746612.53,
+    "not_collected_gbp": 838120274.95,
+    "secured_no_receipt_count": 644,
+    "secured_no_receipt_gbp": 52329037.93,
+    "never_received_count": 12384,
+    "never_received_gbp": 889239599.42
+  },
+  "totals": {
+    "contribution_rows": 39428,
+    "rows_with_amount": 27497,
+    "rows_without_amount": 11931,
+    "committed_gbp": 1451866887.48,
+    "received_gbp": 613746612.53,
+    "shortfall_gbp": 1125901913.36,
+    "never_received_contributions": 12384,
+    "never_received_gbp": 889239599.42,
+    "secured_no_receipt_contributions": 644,
+    "secured_no_receipt_gbp": 52329037.93,
+    "publishing_authorities": 66,
+    "sheffield_contribution_rows": 0
+  },
+  "authorities": [
+    {
+      "entity": "402",
+      "name": "North York Moors National Park Authority",
+      "name_verified": true,
+      "contributions": 27,
+      "committed_gbp": 316912453.0,
+      "received_gbp": 6571652.0,
+      "not_collected_gbp": 310340801.0,
+      "shortfall_gbp": 310340801.0,
+      "never_received_count": 12,
+      "never_received_gbp": 150276070.0,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "345",
+      "name": null,
+      "name_verified": false,
+      "contributions": 1270,
+      "committed_gbp": 126431586.22,
+      "received_gbp": 10451360.45,
+      "not_collected_gbp": 115980225.77,
+      "shortfall_gbp": 117189643.08,
+      "never_received_count": 860,
+      "never_received_gbp": 115045004.43,
+      "secured_no_receipt_count": 90,
+      "secured_no_receipt_gbp": 6258506.74
+    },
+    {
+      "entity": "31",
+      "name": null,
+      "name_verified": false,
+      "contributions": 298,
+      "committed_gbp": 40852041.0,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 40852041.0,
+      "shortfall_gbp": 40852041.0,
+      "never_received_count": 256,
+      "never_received_gbp": 40852041.0,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "234",
+      "name": null,
+      "name_verified": false,
+      "contributions": 534,
+      "committed_gbp": 45335854.41,
+      "received_gbp": 5011096.9,
+      "not_collected_gbp": 40324757.51,
+      "shortfall_gbp": 40976912.94,
+      "never_received_count": 286,
+      "never_received_gbp": 40223514.34,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "131",
+      "name": null,
+      "name_verified": false,
+      "contributions": 519,
+      "committed_gbp": 39016943.2,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 39016943.2,
+      "shortfall_gbp": 39016943.2,
+      "never_received_count": 332,
+      "never_received_gbp": 39016943.2,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "64",
+      "name": null,
+      "name_verified": false,
+      "contributions": 58,
+      "committed_gbp": 37249488.53,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 37249488.53,
+      "shortfall_gbp": 37249488.53,
+      "never_received_count": 49,
+      "never_received_gbp": 37249488.53,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "29",
+      "name": null,
+      "name_verified": false,
+      "contributions": 2647,
+      "committed_gbp": 78003338.99,
+      "received_gbp": 42248613.96,
+      "not_collected_gbp": 35754725.03,
+      "shortfall_gbp": 44209755.15,
+      "never_received_count": 1306,
+      "never_received_gbp": 42021878.95,
+      "secured_no_receipt_count": 27,
+      "secured_no_receipt_gbp": 1546910.3
+    },
+    {
+      "entity": "111",
+      "name": null,
+      "name_verified": false,
+      "contributions": 597,
+      "committed_gbp": 33009299.71,
+      "received_gbp": 1573900.93,
+      "not_collected_gbp": 31435398.78,
+      "shortfall_gbp": 31885730.64,
+      "never_received_count": 434,
+      "never_received_gbp": 31235778.58,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "303",
+      "name": null,
+      "name_verified": false,
+      "contributions": 1178,
+      "committed_gbp": 50208353.16,
+      "received_gbp": 19837847.02,
+      "not_collected_gbp": 30370506.14,
+      "shortfall_gbp": 31029752.45,
+      "never_received_count": 473,
+      "never_received_gbp": 30703077.77,
+      "secured_no_receipt_count": 7,
+      "secured_no_receipt_gbp": 262591.56
+    },
+    {
+      "entity": "242",
+      "name": null,
+      "name_verified": false,
+      "contributions": 465,
+      "committed_gbp": 36732156.63,
+      "received_gbp": 17645735.62,
+      "not_collected_gbp": 19086421.01,
+      "shortfall_gbp": 21620244.85,
+      "never_received_count": 216,
+      "never_received_gbp": 17140624.63,
+      "secured_no_receipt_count": 4,
+      "secured_no_receipt_gbp": 42588.8
+    },
+    {
+      "entity": "34",
+      "name": null,
+      "name_verified": false,
+      "contributions": 620,
+      "committed_gbp": 47898497.14,
+      "received_gbp": 28825890.0,
+      "not_collected_gbp": 19072607.14,
+      "shortfall_gbp": 19356606.08,
+      "never_received_count": 140,
+      "never_received_gbp": 15600014.01,
+      "secured_no_receipt_count": 25,
+      "secured_no_receipt_gbp": 1074831.37
+    },
+    {
+      "entity": "150",
+      "name": null,
+      "name_verified": false,
+      "contributions": 1398,
+      "committed_gbp": 18381375.77,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 18381375.77,
+      "shortfall_gbp": 18381375.77,
+      "never_received_count": 516,
+      "never_received_gbp": 18381375.77,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "59",
+      "name": null,
+      "name_verified": false,
+      "contributions": 762,
+      "committed_gbp": 20795161.36,
+      "received_gbp": 6193197.68,
+      "not_collected_gbp": 14601963.68,
+      "shortfall_gbp": 17844514.48,
+      "never_received_count": 178,
+      "never_received_gbp": 15436161.91,
+      "secured_no_receipt_count": 1,
+      "secured_no_receipt_gbp": 75.0
+    },
+    {
+      "entity": "301",
+      "name": null,
+      "name_verified": false,
+      "contributions": 198,
+      "committed_gbp": 26884047.39,
+      "received_gbp": 13478866.21,
+      "not_collected_gbp": 13405181.18,
+      "shortfall_gbp": 15337008.68,
+      "never_received_count": 66,
+      "never_received_gbp": 13284834.73,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "30",
+      "name": null,
+      "name_verified": false,
+      "contributions": 224,
+      "committed_gbp": 19015091.81,
+      "received_gbp": 5951883.15,
+      "not_collected_gbp": 13063208.66,
+      "shortfall_gbp": 16413881.29,
+      "never_received_count": 172,
+      "never_received_gbp": 16308834.12,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "86",
+      "name": null,
+      "name_verified": false,
+      "contributions": 825,
+      "committed_gbp": 16056292.56,
+      "received_gbp": 3857183.72,
+      "not_collected_gbp": 12199108.84,
+      "shortfall_gbp": 13609000.9,
+      "never_received_count": 446,
+      "never_received_gbp": 12139399.64,
+      "secured_no_receipt_count": 34,
+      "secured_no_receipt_gbp": 464832.56
+    },
+    {
+      "entity": "156",
+      "name": null,
+      "name_verified": false,
+      "contributions": 194,
+      "committed_gbp": 36476453.17,
+      "received_gbp": 25268652.38,
+      "not_collected_gbp": 11207800.79,
+      "shortfall_gbp": 13033694.6,
+      "never_received_count": 62,
+      "never_received_gbp": 11795097.98,
+      "secured_no_receipt_count": 60,
+      "secured_no_receipt_gbp": 9948540.78
+    },
+    {
+      "entity": "291",
+      "name": null,
+      "name_verified": false,
+      "contributions": 2112,
+      "committed_gbp": 110596041.15,
+      "received_gbp": 101081975.57,
+      "not_collected_gbp": 9514065.58,
+      "shortfall_gbp": 60593700.74,
+      "never_received_count": 190,
+      "never_received_gbp": 27130814.65,
+      "secured_no_receipt_count": 8,
+      "secured_no_receipt_gbp": 2547333.31
+    },
+    {
+      "entity": "348",
+      "name": null,
+      "name_verified": false,
+      "contributions": 163,
+      "committed_gbp": 9357642.35,
+      "received_gbp": 28070.5,
+      "not_collected_gbp": 9329571.85,
+      "shortfall_gbp": 9330392.03,
+      "never_received_count": 147,
+      "never_received_gbp": 9314271.89,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "181",
+      "name": null,
+      "name_verified": false,
+      "contributions": 312,
+      "committed_gbp": 20124984.18,
+      "received_gbp": 11351522.92,
+      "not_collected_gbp": 8773461.26,
+      "shortfall_gbp": 8773461.26,
+      "never_received_count": 91,
+      "never_received_gbp": 8773461.26,
+      "secured_no_receipt_count": 92,
+      "secured_no_receipt_gbp": 8805520.12
+    },
+    {
+      "entity": "118",
+      "name": null,
+      "name_verified": false,
+      "contributions": 565,
+      "committed_gbp": 7448897.71,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 7448897.71,
+      "shortfall_gbp": 7448897.71,
+      "never_received_count": 310,
+      "never_received_gbp": 7448897.71,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "49",
+      "name": null,
+      "name_verified": false,
+      "contributions": 139,
+      "committed_gbp": 7407153.0,
+      "received_gbp": 1008085.0,
+      "not_collected_gbp": 6399068.0,
+      "shortfall_gbp": 6399844.0,
+      "never_received_count": 61,
+      "never_received_gbp": 6150034.0,
+      "secured_no_receipt_count": 20,
+      "secured_no_receipt_gbp": 1638188.0
+    },
+    {
+      "entity": "136",
+      "name": null,
+      "name_verified": false,
+      "contributions": 117,
+      "committed_gbp": 5505228.4,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 5505228.4,
+      "shortfall_gbp": 5505228.4,
+      "never_received_count": 110,
+      "never_received_gbp": 5505228.4,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "145",
+      "name": null,
+      "name_verified": false,
+      "contributions": 262,
+      "committed_gbp": 14754008.21,
+      "received_gbp": 9950335.65,
+      "not_collected_gbp": 4803672.56,
+      "shortfall_gbp": 8850083.87,
+      "never_received_count": 86,
+      "never_received_gbp": 7050537.92,
+      "secured_no_receipt_count": 7,
+      "secured_no_receipt_gbp": 1559462.86
+    },
+    {
+      "entity": "26",
+      "name": null,
+      "name_verified": false,
+      "contributions": 22,
+      "committed_gbp": 4586310.37,
+      "received_gbp": 453768.57,
+      "not_collected_gbp": 4132541.8,
+      "shortfall_gbp": 4134576.56,
+      "never_received_count": 8,
+      "never_received_gbp": 3697399.31,
+      "secured_no_receipt_count": 2,
+      "secured_no_receipt_gbp": 78844.96
+    },
+    {
+      "entity": "77",
+      "name": null,
+      "name_verified": false,
+      "contributions": 144,
+      "committed_gbp": 4173565.56,
+      "received_gbp": 141172.0,
+      "not_collected_gbp": 4032393.56,
+      "shortfall_gbp": 4032393.56,
+      "never_received_count": 122,
+      "never_received_gbp": 4032393.56,
+      "secured_no_receipt_count": 23,
+      "secured_no_receipt_gbp": 805262.0
+    },
+    {
+      "entity": "230",
+      "name": null,
+      "name_verified": false,
+      "contributions": 80,
+      "committed_gbp": 3926722.33,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 3926722.33,
+      "shortfall_gbp": 3926722.33,
+      "never_received_count": 14,
+      "never_received_gbp": 3926722.33,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "28",
+      "name": null,
+      "name_verified": false,
+      "contributions": 63,
+      "committed_gbp": 5099872.92,
+      "received_gbp": 1244377.14,
+      "not_collected_gbp": 3855495.78,
+      "shortfall_gbp": 3855495.78,
+      "never_received_count": 40,
+      "never_received_gbp": 3855495.78,
+      "secured_no_receipt_count": 38,
+      "secured_no_receipt_gbp": 3854895.78
+    },
+    {
+      "entity": "368",
+      "name": null,
+      "name_verified": false,
+      "contributions": 130,
+      "committed_gbp": 3845910.37,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 3845910.37,
+      "shortfall_gbp": 3845910.37,
+      "never_received_count": 130,
+      "never_received_gbp": 3845910.37,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "501909",
+      "name": null,
+      "name_verified": false,
+      "contributions": 26,
+      "committed_gbp": 3630790.4,
+      "received_gbp": 21064.94,
+      "not_collected_gbp": 3609725.46,
+      "shortfall_gbp": 3609725.46,
+      "never_received_count": 16,
+      "never_received_gbp": 3236584.0,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "96",
+      "name": null,
+      "name_verified": false,
+      "contributions": 61,
+      "committed_gbp": 3972054.02,
+      "received_gbp": 416189.7,
+      "not_collected_gbp": 3555864.32,
+      "shortfall_gbp": 3556876.02,
+      "never_received_count": 47,
+      "never_received_gbp": 3556876.02,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "179",
+      "name": null,
+      "name_verified": false,
+      "contributions": 404,
+      "committed_gbp": 9356688.26,
+      "received_gbp": 5883325.26,
+      "not_collected_gbp": 3473363.0,
+      "shortfall_gbp": 3813083.5,
+      "never_received_count": 155,
+      "never_received_gbp": 1626503.5,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "153",
+      "name": null,
+      "name_verified": false,
+      "contributions": 2359,
+      "committed_gbp": 37310726.02,
+      "received_gbp": 33867754.14,
+      "not_collected_gbp": 3442971.88,
+      "shortfall_gbp": 34062634.18,
+      "never_received_count": 1048,
+      "never_received_gbp": 32285877.68,
+      "secured_no_receipt_count": 2,
+      "secured_no_receipt_gbp": 1066.0
+    },
+    {
+      "entity": "123",
+      "name": null,
+      "name_verified": false,
+      "contributions": 57,
+      "committed_gbp": 4325974.46,
+      "received_gbp": 909049.95,
+      "not_collected_gbp": 3416924.51,
+      "shortfall_gbp": 3416924.51,
+      "never_received_count": 23,
+      "never_received_gbp": 3416924.51,
+      "secured_no_receipt_count": 5,
+      "secured_no_receipt_gbp": 425289.84
+    },
+    {
+      "entity": "10001",
+      "name": null,
+      "name_verified": false,
+      "contributions": 107,
+      "committed_gbp": 5895412.37,
+      "received_gbp": 2484926.87,
+      "not_collected_gbp": 3410485.5,
+      "shortfall_gbp": 3450532.51,
+      "never_received_count": 31,
+      "never_received_gbp": 944238.69,
+      "secured_no_receipt_count": 24,
+      "secured_no_receipt_gbp": 750272.65
+    },
+    {
+      "entity": "223",
+      "name": null,
+      "name_verified": false,
+      "contributions": 65,
+      "committed_gbp": 4424507.56,
+      "received_gbp": 1229216.98,
+      "not_collected_gbp": 3195290.58,
+      "shortfall_gbp": 4199522.37,
+      "never_received_count": 35,
+      "never_received_gbp": 4199522.37,
+      "secured_no_receipt_count": 30,
+      "secured_no_receipt_gbp": 9305219.39
+    },
+    {
+      "entity": "161",
+      "name": null,
+      "name_verified": false,
+      "contributions": 17,
+      "committed_gbp": 3100059.0,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 3100059.0,
+      "shortfall_gbp": 3100059.0,
+      "never_received_count": 14,
+      "never_received_gbp": 3100059.0,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "142",
+      "name": null,
+      "name_verified": false,
+      "contributions": 40,
+      "committed_gbp": 3973083.19,
+      "received_gbp": 1174870.64,
+      "not_collected_gbp": 2798212.55,
+      "shortfall_gbp": 2798212.55,
+      "never_received_count": 16,
+      "never_received_gbp": 1221310.84,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "158",
+      "name": null,
+      "name_verified": false,
+      "contributions": 51,
+      "committed_gbp": 2700727.0,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 2700727.0,
+      "shortfall_gbp": 2700727.0,
+      "never_received_count": 51,
+      "never_received_gbp": 2700727.0,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "129",
+      "name": null,
+      "name_verified": false,
+      "contributions": 131,
+      "committed_gbp": 2626257.12,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 2626257.12,
+      "shortfall_gbp": 2626257.12,
+      "never_received_count": 104,
+      "never_received_gbp": 2626257.12,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "84",
+      "name": null,
+      "name_verified": false,
+      "contributions": 118,
+      "committed_gbp": 2357486.68,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 2357486.68,
+      "shortfall_gbp": 2357486.68,
+      "never_received_count": 87,
+      "never_received_gbp": 2357486.68,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "130",
+      "name": null,
+      "name_verified": false,
+      "contributions": 102,
+      "committed_gbp": 4917609.49,
+      "received_gbp": 2730338.34,
+      "not_collected_gbp": 2187271.15,
+      "shortfall_gbp": 2187307.29,
+      "never_received_count": 48,
+      "never_received_gbp": 2187306.95,
+      "secured_no_receipt_count": 10,
+      "secured_no_receipt_gbp": 752492.7
+    },
+    {
+      "entity": "382",
+      "name": null,
+      "name_verified": false,
+      "contributions": 64,
+      "committed_gbp": 2931714.74,
+      "received_gbp": 983773.65,
+      "not_collected_gbp": 1947941.09,
+      "shortfall_gbp": 1956839.06,
+      "never_received_count": 21,
+      "never_received_gbp": 1173608.1,
+      "secured_no_receipt_count": 14,
+      "secured_no_receipt_gbp": 504247.16
+    },
+    {
+      "entity": "292",
+      "name": null,
+      "name_verified": false,
+      "contributions": 136,
+      "committed_gbp": 1605270.59,
+      "received_gbp": 2635.58,
+      "not_collected_gbp": 1602635.01,
+      "shortfall_gbp": 1602635.01,
+      "never_received_count": 96,
+      "never_received_gbp": 1602635.01,
+      "secured_no_receipt_count": 45,
+      "secured_no_receipt_gbp": 821883.04
+    },
+    {
+      "entity": "46",
+      "name": null,
+      "name_verified": false,
+      "contributions": 163,
+      "committed_gbp": 9110484.05,
+      "received_gbp": 7652301.12,
+      "not_collected_gbp": 1458182.93,
+      "shortfall_gbp": 2452463.14,
+      "never_received_count": 8,
+      "never_received_gbp": 892503.79,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "232",
+      "name": null,
+      "name_verified": false,
+      "contributions": 31,
+      "committed_gbp": 1438476.5,
+      "received_gbp": 1050.0,
+      "not_collected_gbp": 1437426.5,
+      "shortfall_gbp": 1437426.5,
+      "never_received_count": 24,
+      "never_received_gbp": 1437426.5,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "378",
+      "name": null,
+      "name_verified": false,
+      "contributions": 22,
+      "committed_gbp": 1208612.0,
+      "received_gbp": 3540.0,
+      "not_collected_gbp": 1205072.0,
+      "shortfall_gbp": 1205272.0,
+      "never_received_count": 16,
+      "never_received_gbp": 1113310.0,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "278",
+      "name": null,
+      "name_verified": false,
+      "contributions": 70,
+      "committed_gbp": 1166474.75,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 1166474.75,
+      "shortfall_gbp": 1166474.75,
+      "never_received_count": 31,
+      "never_received_gbp": 1166474.75,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "10000",
+      "name": null,
+      "name_verified": false,
+      "contributions": 69,
+      "committed_gbp": 2338589.37,
+      "received_gbp": 1230369.19,
+      "not_collected_gbp": 1108220.18,
+      "shortfall_gbp": 1270466.07,
+      "never_received_count": 20,
+      "never_received_gbp": 861868.22,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "396",
+      "name": null,
+      "name_verified": false,
+      "contributions": 200,
+      "committed_gbp": 3417266.46,
+      "received_gbp": 2340160.68,
+      "not_collected_gbp": 1077105.78,
+      "shortfall_gbp": 1412557.07,
+      "never_received_count": 15,
+      "never_received_gbp": 1408493.48,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "91",
+      "name": null,
+      "name_verified": false,
+      "contributions": 17,
+      "committed_gbp": 844450.8,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 844450.8,
+      "shortfall_gbp": 844450.8,
+      "never_received_count": 17,
+      "never_received_gbp": 844450.8,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "148",
+      "name": null,
+      "name_verified": false,
+      "contributions": 103,
+      "committed_gbp": 1681413.34,
+      "received_gbp": 1092404.33,
+      "not_collected_gbp": 589009.01,
+      "shortfall_gbp": 609359.05,
+      "never_received_count": 37,
+      "never_received_gbp": 424620.4,
+      "secured_no_receipt_count": 33,
+      "secured_no_receipt_gbp": 232270.4
+    },
+    {
+      "entity": "359",
+      "name": null,
+      "name_verified": false,
+      "contributions": 59,
+      "committed_gbp": 465167.91,
+      "received_gbp": 1510.83,
+      "not_collected_gbp": 463657.08,
+      "shortfall_gbp": 463657.08,
+      "never_received_count": 49,
+      "never_received_gbp": 463657.08,
+      "secured_no_receipt_count": 22,
+      "secured_no_receipt_gbp": 289704.25
+    },
+    {
+      "entity": "173",
+      "name": null,
+      "name_verified": false,
+      "contributions": 42,
+      "committed_gbp": 388486.0,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 388486.0,
+      "shortfall_gbp": 388486.0,
+      "never_received_count": 32,
+      "never_received_gbp": 388486.0,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "134",
+      "name": null,
+      "name_verified": false,
+      "contributions": 6,
+      "committed_gbp": 265860.0,
+      "received_gbp": 77552.0,
+      "not_collected_gbp": 188308.0,
+      "shortfall_gbp": 265860.0,
+      "never_received_count": 3,
+      "never_received_gbp": 265860.0,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "89",
+      "name": null,
+      "name_verified": false,
+      "contributions": 32,
+      "committed_gbp": 3955854.64,
+      "received_gbp": 3827226.82,
+      "not_collected_gbp": 128627.82,
+      "shortfall_gbp": 128627.82,
+      "never_received_count": 2,
+      "never_received_gbp": 128627.82,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "401",
+      "name": null,
+      "name_verified": false,
+      "contributions": 205,
+      "committed_gbp": 1652733.19,
+      "received_gbp": 1606878.83,
+      "not_collected_gbp": 45854.36,
+      "shortfall_gbp": 52881.36,
+      "never_received_count": 4,
+      "never_received_gbp": 12361.0,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "399",
+      "name": null,
+      "name_verified": false,
+      "contributions": 1,
+      "committed_gbp": 39000.0,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 39000.0,
+      "shortfall_gbp": 39000.0,
+      "never_received_count": 1,
+      "never_received_gbp": 39000.0,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "53",
+      "name": null,
+      "name_verified": false,
+      "contributions": 10,
+      "committed_gbp": 0.0,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 0.0,
+      "shortfall_gbp": 0.0,
+      "never_received_count": 0,
+      "never_received_gbp": 0.0,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "339",
+      "name": null,
+      "name_verified": false,
+      "contributions": 135,
+      "committed_gbp": 0.0,
+      "received_gbp": 0.0,
+      "not_collected_gbp": 0.0,
+      "shortfall_gbp": 0.0,
+      "never_received_count": 0,
+      "never_received_gbp": 0.0,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "398",
+      "name": null,
+      "name_verified": false,
+      "contributions": 15,
+      "committed_gbp": 3000.0,
+      "received_gbp": 3000.0,
+      "not_collected_gbp": 0.0,
+      "shortfall_gbp": 0.0,
+      "never_received_count": 0,
+      "never_received_gbp": 0.0,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "51",
+      "name": null,
+      "name_verified": false,
+      "contributions": 162,
+      "committed_gbp": 8749650.09,
+      "received_gbp": 9113045.6,
+      "not_collected_gbp": -363395.51,
+      "shortfall_gbp": 378383.32,
+      "never_received_count": 0,
+      "never_received_gbp": 0.0,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "56",
+      "name": null,
+      "name_verified": false,
+      "contributions": 69,
+      "committed_gbp": 1856547.95,
+      "received_gbp": 4492861.46,
+      "not_collected_gbp": -2636313.51,
+      "shortfall_gbp": 1759543.4,
+      "never_received_count": 52,
+      "never_received_gbp": 1759543.4,
+      "secured_no_receipt_count": 0,
+      "secured_no_receipt_gbp": 0.0
+    },
+    {
+      "entity": "122",
+      "name": null,
+      "name_verified": false,
+      "contributions": 7666,
+      "committed_gbp": 71488929.45,
+      "received_gbp": 85796209.63,
+      "not_collected_gbp": -14307280.18,
+      "shortfall_gbp": 44500199.87,
+      "never_received_count": 1073,
+      "never_received_gbp": 41092682.58,
+      "secured_no_receipt_count": 3,
+      "secured_no_receipt_gbp": 39771.4
+    },
+    {
+      "entity": "320",
+      "name": null,
+      "name_verified": false,
+      "contributions": 3373,
+      "committed_gbp": 21598428.74,
+      "received_gbp": 37533656.53,
+      "not_collected_gbp": -15935227.79,
+      "shortfall_gbp": 18596647.1,
+      "never_received_count": 1458,
+      "never_received_gbp": 17923761.89,
+      "secured_no_receipt_count": 14,
+      "secured_no_receipt_gbp": 276657.02
+    },
+    {
+      "entity": "344",
+      "name": null,
+      "name_verified": false,
+      "contributions": 7317,
+      "committed_gbp": 40984330.74,
+      "received_gbp": 97096512.09,
+      "not_collected_gbp": -56112181.35,
+      "shortfall_gbp": 18447234.52,
+      "never_received_count": 637,
+      "never_received_gbp": 15339247.47,
+      "secured_no_receipt_count": 4,
+      "secured_no_receipt_gbp": 41779.94
+    }
+  ],
+  "purposes": [
+    {
+      "purpose": "green-infrastructure",
+      "contributions": 762,
+      "committed_gbp": 294203721.78,
+      "shortfall_gbp": 280815384.19
+    },
+    {
+      "purpose": "education",
+      "contributions": 1870,
+      "committed_gbp": 277891170.04,
+      "shortfall_gbp": 227009954.46
+    },
+    {
+      "purpose": "open-space-and-leisure",
+      "contributions": 3062,
+      "committed_gbp": 153284832.82,
+      "shortfall_gbp": 101774265.38
+    },
+    {
+      "purpose": "unspecified",
+      "contributions": 3855,
+      "committed_gbp": 127202255.69,
+      "shortfall_gbp": 97125290.21
+    },
+    {
+      "purpose": "affordable-housing",
+      "contributions": 1040,
+      "committed_gbp": 119095706.82,
+      "shortfall_gbp": 82452246.07
+    },
+    {
+      "purpose": "highways",
+      "contributions": 946,
+      "committed_gbp": 93201267.43,
+      "shortfall_gbp": 61792721.42
+    },
+    {
+      "purpose": "economic-development",
+      "contributions": 166,
+      "committed_gbp": 48453646.24,
+      "shortfall_gbp": 41361518.8
+    },
+    {
+      "purpose": "transport-and-travel",
+      "contributions": 1819,
+      "committed_gbp": 59233391.55,
+      "shortfall_gbp": 37225424.88
+    },
+    {
+      "purpose": "community-infrastructure-levy",
+      "contributions": 4189,
+      "committed_gbp": 47569480.2,
+      "shortfall_gbp": 34194886.24
+    },
+    {
+      "purpose": "community-facilities",
+      "contributions": 1680,
+      "committed_gbp": 50368978.81,
+      "shortfall_gbp": 31139549.22
+    },
+    {
+      "purpose": "health",
+      "contributions": 434,
+      "committed_gbp": 36069417.35,
+      "shortfall_gbp": 26835540.28
+    },
+    {
+      "purpose": "neighbourhood-community-infrastructure-levy",
+      "contributions": 2955,
+      "committed_gbp": 30866805.42,
+      "shortfall_gbp": 23517143.64
+    },
+    {
+      "purpose": "other",
+      "contributions": 2907,
+      "committed_gbp": 45725038.47,
+      "shortfall_gbp": 22787719.6
+    },
+    {
+      "purpose": "monitoring-fees",
+      "contributions": 1221,
+      "committed_gbp": 13490844.2,
+      "shortfall_gbp": 12170346.84
+    },
+    {
+      "purpose": "open-space",
+      "contributions": 215,
+      "committed_gbp": 13300021.7,
+      "shortfall_gbp": 10879599.94
+    },
+    {
+      "purpose": "land",
+      "contributions": 29,
+      "committed_gbp": 9747801.74,
+      "shortfall_gbp": 9700837.73
+    },
+    {
+      "purpose": "transport",
+      "contributions": 71,
+      "committed_gbp": 9555317.87,
+      "shortfall_gbp": 9177902.2
+    },
+    {
+      "purpose": "Secondary Education Financial",
+      "contributions": 5,
+      "committed_gbp": 3259707.5,
+      "shortfall_gbp": 3259707.5
+    },
+    {
+      "purpose": "Highway Improvements Financial",
+      "contributions": 1,
+      "committed_gbp": 1871229.0,
+      "shortfall_gbp": 1871229.0
+    },
+    {
+      "purpose": "mayoral-community-infrastructure-levy",
+      "contributions": 39,
+      "committed_gbp": 5003259.25,
+      "shortfall_gbp": 1615960.93
+    },
+    {
+      "purpose": "Primary Education Financial",
+      "contributions": 4,
+      "committed_gbp": 1544417.0,
+      "shortfall_gbp": 1544417.0
+    },
+    {
+      "purpose": "Community Facility on site",
+      "contributions": 2,
+      "committed_gbp": 1319538.0,
+      "shortfall_gbp": 1319538.0
+    },
+    {
+      "purpose": "various choices",
+      "contributions": 3,
+      "committed_gbp": 1230000.0,
+      "shortfall_gbp": 804044.12
+    },
+    {
+      "purpose": "flood-and-water-management",
+      "contributions": 47,
+      "committed_gbp": 1024972.57,
+      "shortfall_gbp": 720349.69
+    },
+    {
+      "purpose": "Outdoor sports capital",
+      "contributions": 5,
+      "committed_gbp": 606338.38,
+      "shortfall_gbp": 606338.38
+    },
+    {
+      "purpose": "Primary School Land",
+      "contributions": 1,
+      "committed_gbp": 513153.42,
+      "shortfall_gbp": 513153.42
+    },
+    {
+      "purpose": "Bus Provision",
+      "contributions": 1,
+      "committed_gbp": 400000.0,
+      "shortfall_gbp": 400000.0
+    },
+    {
+      "purpose": "Indoor Sports capital",
+      "contributions": 4,
+      "committed_gbp": 350754.07,
+      "shortfall_gbp": 350754.07
+    },
+    {
+      "purpose": "Open Space Contribution",
+      "contributions": 1,
+      "committed_gbp": 346454.0,
+      "shortfall_gbp": 346454.0
+    },
+    {
+      "purpose": "Outdoor Sports maintenance",
+      "contributions": 3,
+      "committed_gbp": 333088.45,
+      "shortfall_gbp": 333088.45
+    },
+    {
+      "purpose": "bonds",
+      "contributions": 9,
+      "committed_gbp": 436595.75,
+      "shortfall_gbp": 324841.12
+    },
+    {
+      "purpose": "SPG6 Contribution",
+      "contributions": 1,
+      "committed_gbp": 191791.6,
+      "shortfall_gbp": 191791.6
+    },
+    {
+      "purpose": "Public Art Sum",
+      "contributions": 2,
+      "committed_gbp": 191190.0,
+      "shortfall_gbp": 191190.0
+    },
+    {
+      "purpose": "Sports Facilities Contribution \u00e1",
+      "contributions": 1,
+      "committed_gbp": 181893.6,
+      "shortfall_gbp": 181893.6
+    },
+    {
+      "purpose": "strategic-communinty-infrastructure-levy",
+      "contributions": 20,
+      "committed_gbp": 581803.61,
+      "shortfall_gbp": 129070.08
+    },
+    {
+      "purpose": "OSSR",
+      "contributions": 8,
+      "committed_gbp": 118904.36,
+      "shortfall_gbp": 118904.36
+    },
+    {
+      "purpose": "Archaeological Contributions",
+      "contributions": 1,
+      "committed_gbp": 100000.0,
+      "shortfall_gbp": 100000.0
+    },
+    {
+      "purpose": "Social Care",
+      "contributions": 5,
+      "committed_gbp": 95325.12,
+      "shortfall_gbp": 95325.12
+    },
+    {
+      "purpose": "Strategic Parks Capital",
+      "contributions": 2,
+      "committed_gbp": 82490.0,
+      "shortfall_gbp": 82490.0
+    },
+    {
+      "purpose": "En-Highways",
+      "contributions": 5,
+      "committed_gbp": 248973.68,
+      "shortfall_gbp": 79669.8
+    },
+    {
+      "purpose": "Waste Contribution",
+      "contributions": 2,
+      "committed_gbp": 72998.0,
+      "shortfall_gbp": 72998.0
+    },
+    {
+      "purpose": "Biodiversity Contribution",
+      "contributions": 3,
+      "committed_gbp": 207697.0,
+      "shortfall_gbp": 69474.0
+    },
+    {
+      "purpose": "Young peoples play maintenance",
+      "contributions": 2,
+      "committed_gbp": 51714.0,
+      "shortfall_gbp": 51714.0
+    },
+    {
+      "purpose": "Young people's play Capital",
+      "contributions": 2,
+      "committed_gbp": 50622.0,
+      "shortfall_gbp": 50622.0
+    },
+    {
+      "purpose": "Town Centre Contribution",
+      "contributions": 1,
+      "committed_gbp": 50000.0,
+      "shortfall_gbp": 50000.0
+    },
+    {
+      "purpose": "Integrated Children's Service Contribution (Youth)",
+      "contributions": 5,
+      "committed_gbp": 42509.5,
+      "shortfall_gbp": 42509.5
+    },
+    {
+      "purpose": "Off-site play space improvement contribution",
+      "contributions": 1,
+      "committed_gbp": 40000.0,
+      "shortfall_gbp": 40000.0
+    },
+    {
+      "purpose": "Footpath Financial",
+      "contributions": 1,
+      "committed_gbp": 36000.0,
+      "shortfall_gbp": 36000.0
+    },
+    {
+      "purpose": "Library",
+      "contributions": 5,
+      "committed_gbp": 35986.45,
+      "shortfall_gbp": 35986.45
+    },
+    {
+      "purpose": "Informal Green Space capital",
+      "contributions": 2,
+      "committed_gbp": 33852.0,
+      "shortfall_gbp": 33852.0
+    },
+    {
+      "purpose": "0",
+      "contributions": 1,
+      "committed_gbp": 30000.0,
+      "shortfall_gbp": 30000.0
+    },
+    {
+      "purpose": "Strategic Parks Maintenance",
+      "contributions": 3,
+      "committed_gbp": 29516.0,
+      "shortfall_gbp": 29516.0
+    },
+    {
+      "purpose": "Offsite Childrens Play Contribution",
+      "contributions": 1,
+      "committed_gbp": 28620.0,
+      "shortfall_gbp": 28620.0
+    },
+    {
+      "purpose": "police",
+      "contributions": 11,
+      "committed_gbp": 658917.58,
+      "shortfall_gbp": 25719.64
+    },
+    {
+      "purpose": "Informal Green Space Maintenance",
+      "contributions": 2,
+      "committed_gbp": 25350.0,
+      "shortfall_gbp": 25350.0
+    },
+    {
+      "purpose": "drainage",
+      "contributions": 1,
+      "committed_gbp": 24990.47,
+      "shortfall_gbp": 24990.47
+    },
+    {
+      "purpose": "Maintenance Contribution",
+      "contributions": 1,
+      "committed_gbp": 24000.0,
+      "shortfall_gbp": 24000.0
+    },
+    {
+      "purpose": "Allotment land",
+      "contributions": 1,
+      "committed_gbp": 13500.0,
+      "shortfall_gbp": 13500.0
+    },
+    {
+      "purpose": "Off Site Play Contribution",
+      "contributions": 1,
+      "committed_gbp": 12920.0,
+      "shortfall_gbp": 12920.0
+    },
+    {
+      "purpose": "Pump priming (financially assisting the car club operator for 2 years)",
+      "contributions": 1,
+      "committed_gbp": 12000.0,
+      "shortfall_gbp": 12000.0
+    },
+    {
+      "purpose": "Community Learning",
+      "contributions": 5,
+      "committed_gbp": 10657.58,
+      "shortfall_gbp": 10657.58
+    },
+    {
+      "purpose": "Woodland contribution",
+      "contributions": 1,
+      "committed_gbp": 10000.0,
+      "shortfall_gbp": 10000.0
+    },
+    {
+      "purpose": "En Non-Highways - Capital",
+      "contributions": 6,
+      "committed_gbp": 430401.54,
+      "shortfall_gbp": 5204.13
+    },
+    {
+      "purpose": "Section 106 monitoring fees",
+      "contributions": 14,
+      "committed_gbp": 7915.0,
+      "shortfall_gbp": 5065.0
+    },
+    {
+      "purpose": "Travel Plan Monitoring Fee",
+      "contributions": 1,
+      "committed_gbp": 5000.0,
+      "shortfall_gbp": 5000.0
+    },
+    {
+      "purpose": "digital-infrastructure",
+      "contributions": 2,
+      "committed_gbp": 4430.17,
+      "shortfall_gbp": 4071.25
+    },
+    {
+      "purpose": "Allotments Capital",
+      "contributions": 1,
+      "committed_gbp": 3870.0,
+      "shortfall_gbp": 3870.0
+    },
+    {
+      "purpose": "environment",
+      "contributions": 1,
+      "committed_gbp": 3150.0,
+      "shortfall_gbp": 3150.0
+    },
+    {
+      "purpose": "Quality Monitoring",
+      "contributions": 3,
+      "committed_gbp": 2520.0,
+      "shortfall_gbp": 2520.0
+    },
+    {
+      "purpose": "Allotments maintenance",
+      "contributions": 1,
+      "committed_gbp": 990.0,
+      "shortfall_gbp": 990.0
+    },
+    {
+      "purpose": "Site inspection Fee",
+      "contributions": 4,
+      "committed_gbp": 780.0,
+      "shortfall_gbp": 780.0
+    },
+    {
+      "purpose": "Approval of detail Fee",
+      "contributions": 1,
+      "committed_gbp": 292.0,
+      "shortfall_gbp": 292.0
+    },
+    {
+      "purpose": "Deed of variation to principle agreement",
+      "contributions": 1,
+      "committed_gbp": 0.0,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "Provision - 2- units",
+      "contributions": 1,
+      "committed_gbp": 0.0,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "air quality",
+      "contributions": 1,
+      "committed_gbp": 25000.0,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "community -facilities",
+      "contributions": 1,
+      "committed_gbp": 912.0,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "Thanet Coast And Sandwich Bay Spa Mitigation Strategy",
+      "contributions": 1,
+      "committed_gbp": 1314.0,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "Children's Equipped Play Space",
+      "contributions": 1,
+      "committed_gbp": 11218.0,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "sport-and-play",
+      "contributions": 1,
+      "committed_gbp": 568905.83,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "flood-prevention",
+      "contributions": 1,
+      "committed_gbp": 3760.87,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "SUDS",
+      "contributions": 2,
+      "committed_gbp": 0.0,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "Voluntary Sector Contribution",
+      "contributions": 2,
+      "committed_gbp": 0.0,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "Informal Green Space on site",
+      "contributions": 1,
+      "committed_gbp": 0.0,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "Doctors",
+      "contributions": 1,
+      "committed_gbp": 0.0,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "Wastewater Treatment Works",
+      "contributions": 1,
+      "committed_gbp": 0.0,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "Allotments on site",
+      "contributions": 1,
+      "committed_gbp": 0.0,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "Self build",
+      "contributions": 1,
+      "committed_gbp": 0.0,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "Stodmarsh Package Treatment Plant on site",
+      "contributions": 1,
+      "committed_gbp": 0.0,
+      "shortfall_gbp": 0.0
+    },
+    {
+      "purpose": "parking-space",
+      "contributions": 1,
+      "committed_gbp": 3000.0,
+      "shortfall_gbp": 0.0
+    }
+  ]
+}

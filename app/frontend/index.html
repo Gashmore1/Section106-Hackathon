@@ -253,6 +253,10 @@
     </div>
 
     <div class="flex items-center gap-2 flex-wrap">
+      <div class="flex hairline rounded overflow-hidden" role="tablist" aria-label="View">
+        <button id="tabOverview" onclick="showView('overview')" class="btn" role="tab" aria-selected="true">Overview</button>
+        <button id="tabAudit" onclick="showView('audit')" class="btn" role="tab" aria-selected="false">Deed audit</button>
+      </div>
       <select
         id="agreementSelect"
         class="text-sm rounded px-3 py-1.5 hairline focus:outline-none"
@@ -271,6 +275,115 @@
     </div>
   </header>
 
+  <!-- ======================= OVERVIEW VIEW ======================= -->
+  <div id="viewOverview" class="flex-1 overflow-y-auto">
+
+    <!-- The headline numbers -->
+    <section class="px-5 py-4 hairline border-b" style="background: var(--panel-2)">
+      <div class="flex flex-wrap items-end justify-between gap-3 mb-3">
+        <div>
+          <h2 class="text-sm font-semibold panel-title">Developer money committed to councils and never collected</h2>
+          <p class="text-[11px] muted mt-0.5" id="ovSub">Reading the published statutory datasets…</p>
+        </div>
+        <div class="text-[11px] faint max-w-[38rem] text-right" id="ovCaveat"></div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div class="panel p-4" style="border-color: var(--red); background: var(--red-soft)">
+          <div class="text-[11px] uppercase tracking-wide font-medium" style="color: var(--red)">Committed, never collected</div>
+          <div id="ovNotCollected" class="text-4xl font-bold mt-1 leading-tight" style="color: var(--red)">—</div>
+          <div class="text-[11px] mt-1" id="ovNotCollectedNote" style="color: var(--red); opacity:.85">—</div>
+        </div>
+        <div class="panel p-4" style="border-color: var(--amber); background: var(--amber-soft)">
+          <div class="text-[11px] uppercase tracking-wide font-medium" style="color: var(--amber)">Secured, not a penny received</div>
+          <div id="ovSecured" class="text-4xl font-bold mt-1 leading-tight" style="color: var(--amber)">—</div>
+          <div class="text-[11px] mt-1" id="ovSecuredNote" style="color: var(--amber); opacity:.85">—</div>
+        </div>
+        <div class="panel p-4">
+          <div class="text-[11px] uppercase tracking-wide font-medium muted">Total committed</div>
+          <div id="ovCommitted" class="text-4xl font-bold mt-1 leading-tight" style="color: var(--text)">—</div>
+          <div class="text-[11px] mt-1 muted" id="ovCommittedNote">—</div>
+        </div>
+        <div class="panel p-4" style="border-color: var(--accent); background: var(--accent-soft)">
+          <div class="text-[11px] uppercase tracking-wide font-medium" style="color: var(--accent-text)">Sheffield publishes</div>
+          <div id="ovSheffield" class="text-4xl font-bold mt-1 leading-tight" style="color: var(--accent-text)">—</div>
+          <div class="text-[11px] mt-1" style="color: var(--accent-text); opacity:.85">
+            rows in the national developer-contribution dataset
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- What Sheffield itself publishes -->
+    <section class="px-5 py-3 hairline border-b">
+      <div class="panel p-4">
+        <h2 class="text-sm font-semibold panel-title mb-2">What Sheffield publishes instead</h2>
+        <div id="ovGroundTruth" class="text-[12px] muted leading-relaxed">Loading…</div>
+      </div>
+    </section>
+
+    <!-- Where the money is -->
+    <section class="px-5 py-3 hairline border-b">
+      <div class="panel p-4">
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-2">
+          <div>
+            <h2 class="text-sm font-semibold panel-title">Where the uncollected money sits</h2>
+            <p class="text-[11px] muted mt-0.5" id="ovAuthoritySub">—</p>
+          </div>
+          <div class="text-[11px] faint text-right max-w-[24rem]">
+            Click a row for the definition and the source file the figure came from.
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="ledger" style="min-width: 900px">
+            <thead>
+              <tr>
+                <th style="width:26%">Authority</th>
+                <th class="num">Contributions</th>
+                <th class="num">Committed</th>
+                <th class="num">Received</th>
+                <th class="num">Not collected</th>
+                <th class="num">Secured, unpaid</th>
+              </tr>
+            </thead>
+            <tbody id="ovAuthorityBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- The deeds we read -->
+    <section class="px-5 py-3">
+      <div class="panel p-4">
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-2">
+          <div>
+            <h2 class="text-sm font-semibold panel-title">The deeds we read ourselves, in Sheffield</h2>
+            <p class="text-[11px] muted mt-0.5" id="ovDeedSub">—</p>
+          </div>
+          <div class="text-[11px] faint text-right max-w-[26rem]">
+            Click a deed to see its obligations and evidence, then open the full audit.
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="ledger" style="min-width: 900px">
+            <thead>
+              <tr>
+                <th style="width:26%">Deed</th>
+                <th style="width:17%">Ward</th>
+                <th class="num">Obligations</th>
+                <th class="num">Base</th>
+                <th class="num">Indexed today</th>
+                <th class="num">Shortfall</th>
+              </tr>
+            </thead>
+            <tbody id="ovDeedBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ======================= DEED AUDIT VIEW ======================= -->
+  <div id="viewAudit" hidden>
   <!-- KPI Banner -->
   <section class="grid grid-cols-2 md:grid-cols-5 gap-3 px-5 py-3 hairline border-b" style="background: var(--panel-2)">
     <div class="panel p-3">
@@ -441,16 +554,13 @@
               Spatial aggregation of uncollected S106 contributions. Tiles © OpenStreetMap contributors (no API key).
             </p>
           </div>
-          <div class="flex items-center gap-2 text-[11px] muted shrink-0">
-            <span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--red)"></i> &gt;£500k</span>
-            <span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--amber)"></i> &gt;£100k</span>
-            <span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--green)"></i> clear</span>
-          </div>
+          <div class="text-[11px] muted shrink-0 text-right max-w-[26rem]" id="wardMapLegend"></div>
         </div>
         <div id="wardMap"></div>
       </div>
     </div>
   </main>
+  </div><!-- /viewAudit -->
 
   <script>
     "use strict";
@@ -655,8 +765,8 @@
       rows.forEach((w, i) => {
         const y = i * rowH + 4;
         const frac = w.uncollected_shortfall_gbp / max;
-        const color = w.uncollected_shortfall_gbp > 5e5 ? "var(--red)"
-                    : w.uncollected_shortfall_gbp > 1e5 ? "var(--amber)" : "var(--green)";
+        const band = shortfallBand(w.uncollected_shortfall_gbp);
+        const color = band ? band.color : "var(--text-faint)";
 
         const name = svgEl("text", { x: 0, y: y + 10 });
         name.textContent = w.ward_name;
@@ -676,6 +786,228 @@
     /* ------------------------------------------------------------------ *
      * Data loading + rendering
      * ------------------------------------------------------------------ */
+    /* ------------------------------------------------------------------ *
+     * Views: overview (the national picture) and deed audit (one deed)
+     * ------------------------------------------------------------------ */
+    function showView(name) {
+      const overview = document.getElementById("viewOverview");
+      const audit = document.getElementById("viewAudit");
+      const isOverview = name === "overview";
+      if (overview) overview.hidden = !isOverview;
+      if (audit) audit.hidden = isOverview;
+      const tO = document.getElementById("tabOverview");
+      const tA = document.getElementById("tabAudit");
+      if (tO) { tO.setAttribute("aria-selected", String(isOverview)); tO.classList.toggle("btn-primary", isOverview); }
+      if (tA) { tA.setAttribute("aria-selected", String(!isOverview)); tA.classList.toggle("btn-primary", !isOverview); }
+      // Leaflet measures its container when it is shown, not when it is built.
+      if (!isOverview && mapInstance) setTimeout(() => mapInstance.invalidateSize(), 80);
+    }
+
+    function fmtGBPm(value) {
+      const n = Number(value || 0);
+      if (Math.abs(n) >= 1e9) return "£" + (n / 1e9).toFixed(2) + "bn";
+      if (Math.abs(n) >= 1e6) return "£" + (n / 1e6).toFixed(1) + "m";
+      if (Math.abs(n) >= 1e3) return "£" + Math.round(n / 1e3) + "k";
+      return fmtGBP(n);
+    }
+
+    async function loadNational() {
+      const sub = document.getElementById("ovSub");
+      let res;
+      try {
+        res = await fetch("/api/national");
+      } catch (err) {
+        sub.textContent = "National datasets unreadable: " + err.message;
+        return;
+      }
+      if (!res.ok) {
+        sub.textContent =
+          "National analysis not built yet — run `python3 -m scripts.analyse_national_unpaid`.";
+        return;
+      }
+      const d = await res.json();
+      const h = d.headline || {};
+      const src = d.sources || {};
+      const contribSource = src["developer-agreement-contribution.csv"] || {};
+
+      document.getElementById("ovNotCollected").textContent = fmtGBPm(h.not_collected_gbp);
+      document.getElementById("ovNotCollected").title = fmtGBP(h.not_collected_gbp);
+      document.getElementById("ovNotCollectedNote").textContent =
+        "committed under published agreements with no payment recorded. Some of it is not " +
+        "legally due yet — much triggers on occupation of a later dwelling — but none of it has arrived.";
+
+      document.getElementById("ovSecured").textContent = fmtGBPm(h.secured_no_receipt_gbp);
+      document.getElementById("ovSecured").title = fmtGBP(h.secured_no_receipt_gbp);
+      document.getElementById("ovSecuredNote").textContent =
+        `${(h.secured_no_receipt_count || 0).toLocaleString("en-GB")} contributions the council itself marked secured`;
+
+      document.getElementById("ovCommitted").textContent = fmtGBPm(h.committed_gbp);
+      document.getElementById("ovCommitted").title = fmtGBP(h.committed_gbp);
+      document.getElementById("ovCommittedNote").textContent =
+        `${(h.priced_contributions || 0).toLocaleString("en-GB")} priced contributions from ` +
+        `${h.publishing_authorities || 0} authorities`;
+
+      document.getElementById("ovSheffield").textContent =
+        (d.totals && d.totals.sheffield_contribution_rows === 0) ? "Nothing" :
+        String((d.totals || {}).sheffield_contribution_rows ?? "—");
+      document.getElementById("ovCaveat").textContent =
+        "Every figure is a sum of published rows. " +
+        (d._definitions ? "Definitions: " + Object.keys(d._definitions).join(", ") + "." : "");
+      sub.textContent =
+        `From ${contribSource.rows ? contribSource.rows.toLocaleString("en-GB") : "?"} published ` +
+        `contribution rows and ${src["developer-agreement-transaction.csv"] ? src["developer-agreement-transaction.csv"].rows.toLocaleString("en-GB") : "?"} transaction rows, ` +
+        `analysed ${esc(d._generated || "")}`;
+
+      renderAuthorities(d.authorities || [], d._definitions || {});
+    }
+
+    function renderAuthorities(authorities, definitions) {
+      const body = document.getElementById("ovAuthorityBody");
+      const shown = authorities.slice(0, 12);
+      document.getElementById("ovAuthoritySub").textContent =
+        `Top ${shown.length} of ${authorities.length} publishing authorities, by money committed and not collected`;
+
+      body.innerHTML = shown.map((a, i) => {
+        const label = a.name || `Entity ${a.entity}`;
+        const nameCell = a.name
+          ? esc(a.name)
+          : `<span title="planning.data.gov.uk is not answering, so this entity cannot be named from the organisation register. Not guessed.">` +
+            `Entity ${esc(a.entity)} <span class="chip chip-amber">name unverified</span></span>`;
+        const band = shortfallBand(a["not_collected_gbp"]);
+        return `<tr class="row" tabindex="0" onclick="toggleAuthorityRow(${i})"
+                    onkeydown="if(event.key==='Enter')toggleAuthorityRow(${i})">
+          <td>${nameCell}<div class="text-[11px] faint">entity ${esc(a.entity)}</div></td>
+          <td class="num">${(a.contributions || 0).toLocaleString("en-GB")}</td>
+          <td class="num" title="${fmtGBP(a.committed_gbp)}">${fmtGBPshort(a.committed_gbp)}</td>
+          <td class="num" title="${fmtGBP(a.received_gbp)}">${fmtGBPshort(a.received_gbp)}</td>
+          <td class="num font-semibold" style="color:${band ? band.color : 'inherit'}" title="${fmtGBP(a['not_collected_gbp'])}">${fmtGBPshort(a['not_collected_gbp'])}</td>
+          <td class="num" title="${fmtGBP(a.secured_no_receipt_gbp)}">${a.secured_no_receipt_count ? fmtGBPshort(a.secured_no_receipt_gbp) : "—"}</td>
+        </tr>
+        <tr id="ovAuthDetail-${i}" hidden>
+          <td colspan="6" class="text-[11px] muted" style="background: var(--panel-2)">
+            <div class="panel-inset p-3 space-y-1">
+              <div><strong>Committed</strong> ${fmtGBP(a.committed_gbp)} · <strong>received</strong> ${fmtGBP(a.received_gbp)} ·
+                    <strong>not collected</strong> ${fmtGBP(a['not_collected_gbp'])}</div>
+              <div><strong>Secured with no payment</strong>: ${a.secured_no_receipt_count.toLocaleString("en-GB")} contributions,
+                    ${fmtGBP(a.secured_no_receipt_gbp)} — the council recorded these as owed under a signed agreement and has not collected them.</div>
+              <div class="faint">${esc(definitions.secured_no_receipt || "")}</div>
+            </div>
+          </td>
+        </tr>`;
+      }).join("");
+    }
+
+    function toggleAuthorityRow(i) {
+      const row = document.getElementById("ovAuthDetail-" + i);
+      if (row) row.hidden = !row.hidden;
+    }
+
+    async function loadGroundTruthOverview() {
+      const host = document.getElementById("ovGroundTruth");
+      try {
+        const res = await fetch("/api/ground-truth");
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const gt = await res.json();
+        const rows = (gt.statements || []).map((s) => {
+          const f = s.figures || {};
+          const inYear = f.s106_receipts_in_year_gbp ?? f.s106_cash_income_gbp ?? f.s106_cash_income_including_interest_gbp;
+          const out = f.s106_expenditure_gbp;
+          const held = f.s106_balance_retained_at_year_end_gbp ?? f.balance_held_at_31_march_2025_gbp;
+          return `<tr class="row" style="cursor:default">
+            <td>${esc(s.authority)}<div class="text-[11px] faint">${esc(s.reporting_period)}</div></td>
+            <td class="num">${inYear == null ? "—" : fmtGBP(inYear)}</td>
+            <td class="num">${out == null ? "—" : fmtGBP(out)}</td>
+            <td class="num font-semibold">${held == null ? "—" : fmtGBP(held)}</td>
+          </tr>`;
+        }).join("");
+        host.innerHTML =
+          `<p class="mb-2">Sheffield publishes no developer-agreement, contribution or transaction rows at all. ` +
+          `The only obligation-level figures it publishes are in its Infrastructure Funding Statement, read out of the ` +
+          `council's own PDF. Those are the figures the ledger is calibrated against.</p>` +
+          `<div class="overflow-x-auto"><table class="ledger" style="min-width:640px"><thead><tr>` +
+          `<th style="width:34%">Authority</th><th class="num">Collected in year</th>` +
+          `<th class="num">Spent in year</th><th class="num">Held at year end</th></tr></thead>` +
+          `<tbody>${rows}</tbody></table></div>`;
+      } catch (err) {
+        host.textContent = "Infrastructure Funding Statements not available: " + err.message;
+      }
+    }
+
+    async function loadOverviewDeeds() {
+      const sub = document.getElementById("ovDeedSub");
+      try {
+        const res = await fetch("/api/portfolio");
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const p = await res.json();
+        const t = p.totals || {};
+        sub.textContent =
+          `${t.deed_count} deeds read from real signed agreements · ${t.obligation_count} obligations · ` +
+          `${fmtGBPshort(t.base_total_gbp)} agreed → ${fmtGBPshort(t.indexed_total_gbp)} indexed today`;
+
+        document.getElementById("ovDeedBody").innerHTML = (p.deeds || []).map((d, i) => {
+          const band = shortfallBand(d.recoverable_shortfall_gbp);
+          const empty = d.obligation_count === 0;
+          return `<tr class="row" tabindex="0" onclick="toggleDeedDetail(${i}, '${esc(d.planning_reference)}')"
+                      onkeydown="if(event.key==='Enter')toggleDeedDetail(${i}, '${esc(d.planning_reference)}')">
+            <td>
+              <div class="font-semibold" style="font-family: ui-monospace, monospace"
+                   title="${esc(d.source_note || 'No provenance recorded')}">${esc(d.planning_reference)}</div>
+              <div class="text-[11px] muted">${esc((d.site_name || "").slice(0, 58))}</div>
+              <div class="text-[11px] faint"><span class="chip ${d.extraction_status === 'EXTRACTED' ? 'chip-slate' : 'chip-amber'}">${esc(d.extraction_status || '—')}</span></div>
+            </td>
+            <td class="text-[12px]">${d.ward_resolved ? esc(d.ward_name) : '<span class="chip chip-amber">Ward unresolved</span>'}</td>
+            <td class="num">${empty ? '<span class="chip chip-amber">none found</span>' : d.obligation_count}</td>
+            <td class="num" title="${fmtGBP(d.base_total_gbp)}">${empty ? "—" : fmtGBP0(d.base_total_gbp)}</td>
+            <td class="num" title="${fmtGBP(d.indexed_total_gbp)}">${empty ? "—" : fmtGBP0(d.indexed_total_gbp)}</td>
+            <td class="num font-semibold" style="color:${band ? band.color : 'inherit'}" title="${fmtGBP(d.recoverable_shortfall_gbp)}">${empty ? "—" : fmtGBP0(d.recoverable_shortfall_gbp)}</td>
+          </tr>
+          <tr id="ovDeedDetail-${i}" hidden><td colspan="6" style="background: var(--panel-2)">
+            <div class="panel-inset p-3 text-[11px] muted" id="ovDeedDetailBody-${i}">Reading the audit…</div>
+          </td></tr>`;
+        }).join("");
+      } catch (err) {
+        sub.textContent = "Ledger unavailable: " + err.message;
+      }
+    }
+
+    async function toggleDeedDetail(i, reference) {
+      const row = document.getElementById("ovDeedDetail-" + i);
+      if (!row) return;
+      row.hidden = !row.hidden;
+      if (row.hidden) return;
+      const host = document.getElementById("ovDeedDetailBody-" + i);
+      if (host.dataset.loaded === "1") return;
+      try {
+        const res = await fetch("/api/audit?reference=" + encodeURIComponent(reference));
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const a = await res.json();
+        const findings = a.discrepancies || [];
+        host.innerHTML =
+          (findings.length
+            ? `<div class="mb-2"><strong>${findings.length} findings</strong> — every one traced to a page in the deed</div>` +
+              findings.map((f) => `<div class="flex flex-wrap gap-x-4 gap-y-1 border-t pt-1 mt-1">
+                <span class="font-semibold" style="font-family: ui-monospace, monospace">${esc(f.obligation_id)}</span>
+                <span class="flex-1 min-w-[16rem]">${esc(f.obligation_description || "")}</span>
+                <span>${fmtGBP(f.base_amount_gbp)} → ${fmtGBP(f.indexed_amount_gbp)}</span>
+                <span class="chip chip-amber">${esc(f.audit_status || "")}</span>
+                <span class="faint">page ${esc((f.evidence || {}).page_number ?? "—")} · ${esc((f.evidence || {}).clause_reference || "")}</span>
+              </div>`).join("")
+            : `<div>No findings recorded for this deed.</div>`) +
+          `<div class="mt-3"><button class="btn btn-primary" onclick="openDeedAudit('${esc(reference)}')">Open full audit for ${esc(reference)} →</button></div>`;
+        host.dataset.loaded = "1";
+      } catch (err) {
+        host.textContent = "Audit unavailable: " + err.message;
+      }
+    }
+
+    function openDeedAudit(reference) {
+      const sel = document.getElementById("agreementSelect");
+      if (sel) sel.value = reference;
+      currentPlanningRef = reference;
+      showView("audit");
+      startLiveAudit();
+    }
+
     /* ------------------------------------------------------------------ *
      * Ledger portfolio — whole-ledger rollup, computed in SQL, not here
      * ------------------------------------------------------------------ */
@@ -891,6 +1223,29 @@
       })));
     }
 
+    /* ------------------------------------------------------------------ *
+     * Shortfall colour bands — one scale shared by the ward map and the bars
+     * ------------------------------------------------------------------ */
+    // Chosen so a real, recoverable five-figure shortfall is not drawn in the same
+    // "nothing to see" green as a ward with nothing owed.
+    const SHORTFALL_BANDS = [
+      { min: 10000, color: "#dc2626", css: "var(--red)",   label: "over £10,000 recoverable" },
+      { min: 1000,  color: "#d97706", css: "var(--amber)", label: "£1,000 – £10,000" },
+      { min: 0.01,  color: "#059669", css: "var(--green)", label: "under £1,000" },
+    ];
+    function shortfallBand(value) {
+      const v = Number(value || 0);
+      return SHORTFALL_BANDS.find((b) => v > b.min) || null;
+    }
+    function shortfallLegend() {
+      const swatch = (color, label) =>
+        `<span class="inline-flex items-center gap-1 mr-3 whitespace-nowrap">` +
+        `<span style="width:10px;height:10px;border-radius:2px;background:${color};display:inline-block"></span>` +
+        `${esc(label)}</span>`;
+      return SHORTFALL_BANDS.map((b) => swatch(b.color, b.label)).join("") +
+        swatch("#94a3b8", "no audited exposure in the ledger");
+    }
+
     async function loadWardMap() {
       if (!mapInstance) {
         mapInstance = L.map("wardMap", { scrollWheelZoom: false }).setView([53.3811, -1.488], 11);
@@ -919,8 +1274,13 @@
       geojsonLayer = L.geoJSON(features, {
         style: (feature) => {
           const s = feature.properties.uncollected_shortfall_gbp || 0;
-          const fillColor = s > 5e5 ? "#dc2626" : s > 1e5 ? "#d97706" : "#059669";
-          return { color: "#ffffff", weight: 1.5, fillColor, fillOpacity: 0.5 };
+          const band = shortfallBand(s);
+          return {
+            color: "#ffffff",
+            weight: 1.5,
+            fillColor: band ? band.color : "#94a3b8",
+            fillOpacity: 0.55,
+          };
         },
         onEachFeature: (feature, layer) => {
           const p = feature.properties;
@@ -934,6 +1294,9 @@
             </div>`);
         },
       }).addTo(mapInstance);
+
+      const legend = document.getElementById("wardMapLegend");
+      if (legend) legend.innerHTML = shortfallLegend();
 
       try { mapInstance.fitBounds(geojsonLayer.getBounds(), { padding: [16, 16] }); } catch (e) {}
       renderWardBars("wardChart", wards);
@@ -987,8 +1350,10 @@
 
     window.addEventListener("DOMContentLoaded", async () => {
       initThemeButton();
+      showView("overview");
       const hasDeeds = await loadAgreements();
       loadPortfolio();
+      loadOverview();
       await loadWardMap();
       if (hasDeeds) startLiveAudit();
     });
