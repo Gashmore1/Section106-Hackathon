@@ -378,6 +378,7 @@
             <tbody id="ovDeedBody"></tbody>
           </table>
         </div>
+        <div id="ovAbstained" class="mt-3 pt-3 hairline border-t text-[11px] muted"></div>
       </div>
     </section>
   </div>
@@ -940,9 +941,12 @@
         if (!res.ok) throw new Error("HTTP " + res.status);
         const p = await res.json();
         const t = p.totals || {};
+        const abst = (p.data_quality || {}).abstained_deeds || [];
+        const read = (t.deed_count || 0) + abst.length;
         sub.textContent =
-          `${t.deed_count} deeds read from real signed agreements · ${t.obligation_count} obligations · ` +
-          `${fmtGBPshort(t.base_total_gbp)} agreed → ${fmtGBPshort(t.indexed_total_gbp)} indexed today`;
+          `${read} deeds read from real signed agreements — ${t.deed_count} produced ` +
+          `${t.obligation_count} obligations totalling ${fmtGBPshort(t.base_total_gbp)} agreed → ` +
+          `${fmtGBPshort(t.indexed_total_gbp)} indexed today`;
 
         document.getElementById("ovDeedBody").innerHTML = (p.deeds || []).map((d, i) => {
           const band = shortfallBand(d.recoverable_shortfall_gbp);
@@ -965,6 +969,15 @@
             <div class="panel-inset p-3 text-[11px] muted" id="ovDeedDetailBody-${i}">Reading the audit…</div>
           </td></tr>`;
         }).join("");
+
+        document.getElementById("ovAbstained").innerHTML = abst.length
+          ? `<strong>${abst.length} deeds read that produced no obligation</strong>, recorded as ` +
+            `abstentions rather than as £0: ` +
+            abst.map((a) => `<span class="chip chip-amber" title="${esc(a.site_name || '')}">${esc(a.planning_reference)}</span>`).join(" ") +
+            `<div class="faint mt-2">These deeds were downloaded from Sheffield's public register and read. ` +
+            `Where the scanned text would not yield a sum the deed spells out in words, the auditor abstains ` +
+            `rather than guessing, so they hold no rows in the ledger.</div>`
+          : "";
       } catch (err) {
         sub.textContent = "Ledger unavailable: " + err.message;
       }

@@ -454,6 +454,57 @@ def run_deterministic_audit(
     )
 
 
+SHEFFIELD_AUTHORITY = "Sheffield City Council"
+
+DEED_CORPORA: tuple[tuple[str, Path], ...] = (
+    (
+        "Sheffield planning register",
+        Path(__file__).resolve().parent
+        / "fixtures" / "pdfs" / "sheffield" / "provenance.json",
+    ),
+    (
+        "curated deeds",
+        Path(__file__).resolve().parent / "fixtures" / "pdfs" / "real" / "provenance.json",
+    ),
+)
+
+
+def _corpus_deeds_not_in_ledger(ledger_refs: set[str]) -> list[dict[str, Any]]:
+    """
+    Deeds that were downloaded and read but contributed nothing to the ledger.
+
+    They are deliberately absent from PostgreSQL: persisting nothing is what an
+    abstention means. Without this the UI under-reports how many deeds were read,
+    which makes the corpus look smaller than the work that was done.
+    """
+    missing: list[dict[str, Any]] = []
+    for corpus, path in DEED_CORPORA:
+        if not path.exists():
+            continue
+        try:
+            deeds = json.loads(path.read_text()).get("deeds", [])
+        except (json.JSONDecodeError, OSError):
+            continue
+        for deed in deeds:
+            reference = deed.get("planning_reference")
+            if not reference or reference in ledger_refs:
+                continue
+            # Another authority's deed was never ours to read: the ingest skips it
+            # by design, so calling it an abstention would be a lie about coverage.
+            if (deed.get("authority") or "") != SHEFFIELD_AUTHORITY:
+                continue
+            missing.append(
+                {
+                    "planning_reference": reference,
+                    "corpus": corpus,
+                    "site_name": deed.get("site_name"),
+                    "ward_name": deed.get("ward_name"),
+                    "document_url": deed.get("document_url"),
+                }
+            )
+    return missing
+
+
 def get_portfolio_summary() -> dict[str, Any]:
     """
     Whole-ledger rollup: every deed the ledger holds, audited with the same
@@ -511,6 +562,10 @@ def get_portfolio_summary() -> dict[str, Any]:
         for key in ("base_total_gbp", "indexed_total_gbp", "recoverable_shortfall_gbp"):
             row[key] = round(row[key] + d[key], 2)
 
+    abstained = _corpus_deeds_not_in_ledger(
+        {a["planning_reference"] for a in agreements}
+    )
+
     base = _total("base_total_gbp")
     indexed = _total("indexed_total_gbp")
     return {
@@ -532,6 +587,7 @@ def get_portfolio_summary() -> dict[str, Any]:
         "data_quality": {
             "obligations_with_evidence_page": evidence_pages_resolved,
             "obligations_total": evidence_total,
+            "abstained_deeds": abstained,
             "occupation_telemetry": (
                 "Occupation was recorded as 0 dwellings for every deed, so obligations are "
                 "reported as not yet triggered rather than as breaches."
