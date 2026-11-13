@@ -8,7 +8,7 @@
 services:
   db:
     build:
-      context: ./db
+      context: .
     image: s106-postgres:16-3.4-pgvector
     container_name: s106-db
     restart: unless-stopped
@@ -28,6 +28,47 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # ---- App Service ----
+  # FastAPI backend with SSE telemetry, dashboard, and CSV/DOCX exporters.
+  # Build: docker compose build app
+  # Run:  docker compose up -d --build
+  # Connect from laptop: ssh -L 5432:127.0.0.1:5432 spark3
+  #   then: postgresql+psycopg://spark:sparkpassword@localhost:5432/sheffield_s106
+  #   Open browser: http://localhost:8080
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: s106-auditor-app
+    container_name: s106-auditor
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      # LLM endpoint — override via docker compose override or environment file
+      VLLM_BASE_URL: http://spark3.local:11434/v1
+      VLLM_API_KEY: ollama
+      VLLM_MODEL_NAME: qwen3.6:35b-a3b
+      # PostgreSQL reachable via SSH tunnel from laptop, or directly if running on Spark:
+      # When on the Spark host: postgresql+psycopg://spark:sparkpassword@host.docker.internal:5432/sheffield_s106
+      # When via SSH tunnel from laptop: postgresql+psycopg://spark:sparkpassword@localhost:5432/sheffield_s106
+      DATABASE_URL: postgresql+psycopg://spark:sparkpassword@db:5432/sheffield_s106
+      # The sql_tools.get_engine() reads DATABASE_URL env var; the db service resolves to
+      # the container name "s106-db" via docker-compose internal DNS.
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8080
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      # Mount current directory for live reload during development
+      - .:/app:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
 
 volumes:
   s106_pgdata:
