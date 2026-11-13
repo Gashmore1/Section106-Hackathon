@@ -446,9 +446,13 @@ def repair_payload(
             if trigger == "PRIOR_TO_OCCUPATION" and not threshold:
                 threshold = 1
 
+        # obligation_id is the ledger's primary key across every deed, and the model
+        # returns "OBL-001" for the first obligation of every deed it reads. Scope
+        # the id to the planning reference so two deeds can never collide.
+        scoped_prefix = f"OBL-{re.sub(r'[^0-9A-Za-z]+', '-', planning_reference)}-"
         obligation_id = str(obl.get("obligation_id") or "").strip()
-        if not obligation_id or obligation_id in seen_ids:
-            obligation_id = f"OBL-{re.sub(r'[^0-9A-Za-z]+', '-', planning_reference)}-{index:02d}"
+        if not obligation_id.startswith(scoped_prefix) or obligation_id in seen_ids:
+            obligation_id = f"{scoped_prefix}{index:02d}"
         seen_ids.add(obligation_id)
 
         repaired.append(
@@ -675,7 +679,19 @@ async def main() -> None:
     )
     rows = []
     for entry in entries:
-        row = await ingest_deed(entry, dry_run=args.dry_run)
+        try:
+            row = await ingest_deed(entry, dry_run=args.dry_run)
+        except Exception as exc:  # one unreadable deed must not lose the other eight
+            row = {
+                "planning_reference": entry.get("planning_reference", "?"),
+                "status": "INGEST_FAILED",
+                "obligations": 0,
+                "base_total_gbp": 0.0,
+                "indexed_total_gbp": 0.0,
+                "ward": entry.get("ward_name") or "Unassigned",
+                "reason": f"{type(exc).__name__}: {exc}",
+                "notes": [],
+            }
         rows.append(row)
         print(
             f"  {row['planning_reference']:14s} {row['status']:30s} "
