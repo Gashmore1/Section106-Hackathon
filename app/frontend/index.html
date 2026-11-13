@@ -1,44 +1,253 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="auto">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sheffield S106 & Infrastructure Levy Autonomous Auditor | DGX Spark</title>
+
+  <!-- Apply saved theme before first paint to avoid a flash of the wrong palette -->
+  <script>
+    (function () {
+      const saved = localStorage.getItem("s106-theme") || "auto";
+      document.documentElement.dataset.theme = saved;
+    })();
+  </script>
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <style>
+    /* ------------------------------------------------------------------ *
+     * Semantic palette. Light values are the default; dark values apply
+     * when the OS prefers dark, or when the user forces dark manually.
+     * Every component below reads these, so a theme switch is instant and
+     * the inline-SVG charts recolour themselves without a re-render.
+     * ------------------------------------------------------------------ */
+    :root {
+      color-scheme: light dark;
+      --bg: #f1f4f9;
+      --panel: #ffffff;
+      --panel-2: #f8fafc;
+      --border: #dbe2ec;
+      --border-soft: #e8edf4;
+      --text: #0f172a;
+      --text-muted: #5b6b82;
+      --text-faint: #8496ad;
+      --accent: #4f8a00;
+      --accent-soft: #eaf5da;
+      --accent-text: #3d6b00;
+      --amber: #b45309;
+      --amber-soft: #fdf3e0;
+      --red: #c2334d;
+      --red-soft: #fdeaee;
+      --green: #0f7b5f;
+      --green-soft: #e3f6f0;
+      --slate-chip: #eef2f7;
+      --grid-line: #e6ebf2;
+      --map-filter: none;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root[data-theme="auto"] {
+        --bg: #0b0f17;
+        --panel: #111827;
+        --panel-2: #0b111c;
+        --border: #26303f;
+        --border-soft: #1d2635;
+        --text: #e2e8f0;
+        --text-muted: #94a3b8;
+        --text-faint: #64748b;
+        --accent: #a3e635;
+        --accent-soft: #1a2a0d;
+        --accent-text: #bef264;
+        --amber: #fbbf24;
+        --amber-soft: #2a1f08;
+        --red: #f87171;
+        --red-soft: #2c1116;
+        --green: #34d399;
+        --green-soft: #08241d;
+        --slate-chip: #1e293b;
+        --grid-line: #1e293b;
+        --map-filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.92) saturate(0.85);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0b0f17;
+      --panel: #111827;
+      --panel-2: #0b111c;
+      --border: #26303f;
+      --border-soft: #1d2635;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --text-faint: #64748b;
+      --accent: #a3e635;
+      --accent-soft: #1a2a0d;
+      --accent-text: #bef264;
+      --amber: #fbbf24;
+      --amber-soft: #2a1f08;
+      --red: #f87171;
+      --red-soft: #2c1116;
+      --green: #34d399;
+      --green-soft: #08241d;
+      --slate-chip: #1e293b;
+      --grid-line: #1e293b;
+      --map-filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.92) saturate(0.85);
+    }
+
+    html, body { background: var(--bg); color: var(--text); }
     body {
-      background-color: #0b0f17;
-      color: #e2e8f0;
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      transition: background-color 0.18s ease, color 0.18s ease;
     }
-    .nvidia-badge {
-      background: linear-gradient(90deg, #76b900 0%, #4e8000 100%);
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 0.6rem;
+      transition: background-color 0.18s ease, border-color 0.18s ease;
     }
-    #wardMap {
-      height: 290px;
-      width: 100%;
+    .panel-inset {
+      background: var(--panel-2);
+      border: 1px solid var(--border-soft);
       border-radius: 0.5rem;
     }
+    .panel-title { color: var(--text); }
+    .muted { color: var(--text-muted); }
+    .faint { color: var(--text-faint); }
+    .hairline { border-color: var(--border) !important; }
+    .hairline-soft { border-color: var(--border-soft) !important; }
+
+    .btn {
+      border-radius: 0.4rem;
+      font-size: 0.8rem;
+      padding: 0.4rem 0.8rem;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      transition: filter 0.15s ease, background-color 0.15s ease;
+    }
+    .btn:hover { filter: brightness(1.08); }
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0b0f17;
+      font-weight: 600;
+    }
+    :root[data-theme="light"] .btn-primary { color: #ffffff; }
+
+    .chip {
+      display: inline-block;
+      white-space: nowrap;
+      border-radius: 0.3rem;
+      padding: 0.1rem 0.45rem;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      border: 1px solid transparent;
+    }
+    .chip-red    { background: var(--red-soft);    color: var(--red);    border-color: var(--red); }
+    .chip-amber  { background: var(--amber-soft);  color: var(--amber);  border-color: var(--amber); }
+    .chip-green  { background: var(--green-soft);  color: var(--green);  border-color: var(--green); }
+    .chip-slate  { background: var(--slate-chip);  color: var(--text-muted); border-color: var(--border); }
+    .chip-accent { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent); }
+
+    .nvidia-badge {
+      background: linear-gradient(90deg, #76b900 0%, #4e8000 100%);
+      color: #0b0f17;
+    }
+
+    /* ------------------------------------------------------------------ *
+     * Sizing: nothing is pinned to a fixed pixel height any more. Panels
+     * grow with the viewport, and the map gets a viewport-relative box
+     * with a sane floor so it is never too small to read.
+     * ------------------------------------------------------------------ */
+    #wardMap {
+      width: 100%;
+      height: clamp(340px, 46vh, 640px);
+      border-radius: 0.5rem;
+      background: var(--panel-2);
+    }
+    .leaflet-tile { filter: var(--map-filter); }
+    .leaflet-container { background: var(--panel-2); font: inherit; }
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+      background: var(--panel);
+      color: var(--text);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    }
+    .leaflet-bar a { background: var(--panel); color: var(--text); border-color: var(--border); }
+
+    /* ------------------------------------------------------------------ *
+     * Ledger table: fixed layout with deliberate column widths so the
+     * obligation title gets the room it needs and the money columns stay
+     * on one line instead of stacking.
+     * ------------------------------------------------------------------ */
+    table.ledger { table-layout: fixed; width: 100%; min-width: 660px; border-collapse: collapse; }
+    table.ledger th, table.ledger td { padding: 0.62rem 0.45rem; vertical-align: top; }
+    table.ledger th {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-faint);
+      text-align: left;
+      line-height: 1.25;
+    }
+    table.ledger th.num { text-align: right; }
+    table.ledger td.num {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.72rem;
+      white-space: nowrap;
+      text-align: right;
+      /* Left padding is the gutter between right-aligned figures, so adjacent
+         money columns can never butt up against each other again. */
+      padding-left: 0.7rem;
+    }
+    table.ledger tr.row { border-top: 1px solid var(--border-soft); cursor: pointer; }
+    table.ledger tr.row:hover, table.ledger tr.row:focus { background: var(--panel-2); outline: none; }
+    table.ledger tr.row.active { background: var(--accent-soft); }
+    .obl-title { font-size: 0.78rem; font-weight: 600; color: var(--text); line-height: 1.25; }
+    .obl-ref {
+      font-size: 0.64rem; color: var(--text-faint); margin-top: 0.15rem;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .mult { font-size: 0.62rem; color: var(--text-faint); }
+
+    /* Inline SVG charts inherit the palette through CSS custom properties */
+    .chart { width: 100%; height: auto; display: block; overflow: visible; }
+    .chart text { fill: var(--text-muted); font-size: 10px; }
+    .chart .axis { stroke: var(--grid-line); stroke-width: 1; }
+    .bar-received { fill: var(--green); }
+    .bar-shortfall { fill: var(--red); }
+    .bar-base { fill: var(--text-faint); }
+    .bar-uplift { fill: var(--amber); }
+    .bar-net { fill: var(--accent); }
+    .mini-track { fill: var(--grid-line); }
+    .spark-line { fill: none; stroke: var(--accent); stroke-width: 2; }
+    .spark-area { fill: var(--accent); opacity: 0.14; }
+
+    .bar-mini { width: 100%; height: 6px; border-radius: 3px; background: var(--grid-line); overflow: hidden; display: flex; margin-top: 0.3rem; }
+    .bar-mini > i { display: block; height: 100%; }
+
+    .telemetry-line { border-left: 2px solid var(--border); padding-left: 0.5rem; }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
   </style>
 </head>
+
 <body class="min-h-screen flex flex-col">
   <!-- Header -->
-  <header class="border-b border-slate-800 bg-slate-900/90 px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+  <header class="hairline border-b px-5 py-3 flex flex-wrap items-center justify-between gap-3" style="background: var(--panel)">
     <div class="flex items-center gap-3">
-      <span class="nvidia-badge text-xs font-bold uppercase tracking-wider text-black px-2.5 py-1 rounded">
+      <span class="nvidia-badge text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded">
         DGX Spark GB10 • Air-Gapped
       </span>
       <div>
-        <h1 class="text-lg font-bold text-white tracking-tight">
-          Sheffield City Council — Section 106 & Infrastructure Levy Autonomous Auditor
+        <h1 class="text-base font-bold tracking-tight" style="color: var(--text)">
+          Sheffield City Council — Section 106 &amp; Infrastructure Levy Autonomous Auditor
         </h1>
-        <p class="text-xs text-slate-400">
-          Local vLLM Structured Extraction + Deterministic ONS/BCIS Indexation + PostGIS Ward Telemetry
+        <p class="text-xs muted">
+          Local LLM structured extraction + deterministic ONS/BCIS indexation + PostGIS ward telemetry
         </p>
       </div>
     </div>
@@ -46,199 +255,401 @@
     <div class="flex items-center gap-2 flex-wrap">
       <select
         id="agreementSelect"
-        class="bg-slate-800 border border-slate-700 text-sm rounded px-3 py-1.5 text-white focus:outline-none focus:border-lime-500"
+        class="text-sm rounded px-3 py-1.5 hairline focus:outline-none"
+        style="background: var(--panel-2); color: var(--text)"
       ></select>
-      <button
-        id="runAuditBtn"
-        onclick="startLiveAudit()"
-        class="bg-lime-500 hover:bg-lime-400 text-slate-950 font-semibold text-sm px-4 py-1.5 rounded transition"
-      >
-        ▶ Run Autonomous Audit
-      </button>
-      <button
-        onclick="downloadDemandNotice()"
-        class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-100 text-xs font-medium px-3 py-1.5 rounded transition"
-      >
-        ⬇ Legal Demand Notice (.docx)
-      </button>
-      <div class="flex items-center gap-1 border-l border-slate-700 pl-2">
-        <span class="text-[11px] text-slate-400 mr-1">planning.data.gov.uk CSVs (3/3):</span>
-        <a
-          href="/api/export/csv/developer-agreement"
-          class="bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 text-[11px] px-2 py-1 rounded"
-        >1. Agreement</a>
-        <a
-          href="/api/export/csv/developer-agreement-contribution"
-          class="bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 text-[11px] px-2 py-1 rounded"
-        >2. Contribution</a>
-        <a
-          href="/api/export/csv/developer-agreement-transaction"
-          class="bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 text-emerald-300 text-[11px] px-2 py-1 rounded"
-        >3. Transaction</a>
+      <button id="runAuditBtn" onclick="startLiveAudit()" class="btn btn-primary">▶ Run Autonomous Audit</button>
+      <button onclick="downloadDemandNotice()" class="btn">⬇ Demand Notice (.docx)</button>
+      <button id="themeToggle" onclick="cycleTheme()" class="btn" title="Cycle theme (auto → light → dark)">◐ Auto</button>
+
+      <div class="flex items-center gap-1 hairline border-l pl-2">
+        <span class="text-[11px] muted mr-1">planning.data.gov.uk CSVs (3/3):</span>
+        <a href="/api/export/csv/developer-agreement" class="chip chip-green">1. Agreement</a>
+        <a href="/api/export/csv/developer-agreement-contribution" class="chip chip-green">2. Contribution</a>
+        <a href="/api/export/csv/developer-agreement-transaction" class="chip chip-green">3. Transaction</a>
       </div>
     </div>
   </header>
 
   <!-- KPI Banner -->
-  <section class="grid grid-cols-2 md:grid-cols-5 gap-3 px-6 py-3 bg-slate-900/40 border-b border-slate-800">
-    <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
-      <div class="text-xs text-slate-400">Site Occupation Telemetry</div>
-      <div id="kpiOccupation" class="text-xl font-bold text-white mt-0.5">—</div>
-      <div id="kpiSiteName" class="text-[11px] text-slate-400 truncate mt-0.5">—</div>
+  <section class="grid grid-cols-2 md:grid-cols-5 gap-3 px-5 py-3 hairline border-b" style="background: var(--panel-2)">
+    <div class="panel p-3">
+      <div class="text-xs muted">Site Occupation Telemetry</div>
+      <div id="kpiOccupation" class="text-xl font-bold mt-0.5" style="color: var(--text)">—</div>
+      <div id="kpiSiteName" class="text-[11px] muted truncate mt-0.5">—</div>
     </div>
-    <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
-      <div class="text-xs text-slate-400">Nominal Deed Base Total</div>
-      <div id="kpiBase" class="text-xl font-bold text-slate-200 mt-0.5">—</div>
-      <div class="text-[11px] text-slate-500 mt-0.5">Unindexed S106 covenant sum</div>
+    <div class="panel p-3">
+      <div class="text-xs muted">Nominal Deed Base Total</div>
+      <div id="kpiBase" class="text-xl font-bold mt-0.5" style="color: var(--text)">—</div>
+      <div class="text-[11px] faint mt-0.5">Unindexed S106 covenant sum</div>
     </div>
-    <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
-      <div class="text-xs text-slate-400">Indexed Liability (BCIS / RPI / CPI)</div>
-      <div id="kpiIndexed" class="text-xl font-bold text-amber-400 mt-0.5">—</div>
-      <div class="text-[11px] text-slate-500 mt-0.5">Deterministic SQL inflation adjustment</div>
+    <div class="panel p-3">
+      <div class="text-xs muted">Indexed Liability (BCIS / RPI / CPI)</div>
+      <div id="kpiIndexed" class="text-xl font-bold mt-0.5" style="color: var(--amber)">—</div>
+      <div class="text-[11px] faint mt-0.5">Deterministic SQL inflation adjustment</div>
     </div>
-    <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
-      <div class="text-xs text-slate-400">Council Ledger Received</div>
-      <div id="kpiReceived" class="text-xl font-bold text-emerald-400 mt-0.5">—</div>
-      <div class="text-[11px] text-slate-500 mt-0.5">Verified bank receipts</div>
+    <div class="panel p-3">
+      <div class="text-xs muted">Council Ledger Received</div>
+      <div id="kpiReceived" class="text-xl font-bold mt-0.5" style="color: var(--green)">—</div>
+      <div class="text-[11px] faint mt-0.5">Verified bank receipts</div>
     </div>
-    <div class="bg-red-950/40 border border-red-800/70 rounded-lg p-3">
-      <div class="text-xs text-red-300 font-medium">Recoverable Audit Shortfall</div>
-      <div id="kpiShortfall" class="text-xl font-bold text-red-400 mt-0.5">—</div>
-      <div class="text-[11px] text-red-300/70 mt-0.5">Triggered unpaid + missing indexation</div>
+    <div class="panel p-3" style="border-color: var(--red); background: var(--red-soft)">
+      <div class="text-xs font-medium" style="color: var(--red)">Recoverable Audit Shortfall</div>
+      <div id="kpiShortfall" class="text-xl font-bold mt-0.5" style="color: var(--red)">—</div>
+      <div class="text-[11px] mt-0.5" style="color: var(--red); opacity: .8">Triggered unpaid + missing indexation</div>
     </div>
   </section>
 
-  <!-- Split-Screen Workspace -->
-  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-6">
-    <!-- Left Column: PDF Evidence Viewer & Live Agent SSE Telemetry (5 cols) -->
-    <div class="lg:col-span-5 flex flex-col gap-4">
-      <!-- PDF Evidence Inspector -->
-      <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 flex-1 flex flex-col">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+  <!-- Workspace -->
+  <main class="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-4 p-5 items-start">
+    <!-- Left column -->
+    <div class="xl:col-span-5 flex flex-col gap-4">
+      <!-- Evidence viewer -->
+      <div class="panel p-4">
+        <div class="flex items-start justify-between gap-3 hairline border-b pb-2 mb-3">
           <div>
-            <h2 class="text-sm font-semibold text-white">
-              Deed Evidence Viewer (PyMuPDF Bounding Box Trace)
-            </h2>
-            <p class="text-xs text-slate-400">
-              Click any obligation row in the ledger to inspect its verbatim S106 covenant & coordinates
+            <h2 class="text-sm font-semibold panel-title">Deed Evidence Viewer (PyMuPDF bounding-box trace)</h2>
+            <p class="text-xs muted mt-0.5">
+              Select any obligation row to inspect its verbatim covenant and PDF coordinates
             </p>
           </div>
-          <span id="evidencePageBadge" class="bg-slate-800 text-lime-400 border border-slate-700 text-xs px-2.5 py-1 rounded font-mono">
-            Page —
-          </span>
+          <span id="evidencePageBadge" class="chip chip-accent shrink-0" style="font-family: ui-monospace, monospace">Page —</span>
         </div>
 
-        <div class="bg-slate-950 border border-slate-800 rounded p-4 flex-1 flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
-              <span id="evidenceClauseRef" class="font-semibold text-amber-300">Select an obligation</span>
-              <span id="evidenceBbox" class="font-mono text-[11px] text-slate-500">BBox: [—, —, —, —]</span>
-            </div>
-            <blockquote
-              id="evidenceQuote"
-              class="border-l-4 border-lime-500 bg-lime-950/20 text-slate-100 p-3 rounded-r text-sm leading-relaxed italic"
-            >
-              Select an obligation from the Financial Audit Ledger to highlight the exact legal covenant extracted from the Section 106 deed.
-            </blockquote>
+        <div class="panel-inset p-4">
+          <div class="flex items-start justify-between gap-3 text-xs mb-2">
+            <span id="evidenceClauseRef" class="font-semibold" style="color: var(--amber)">Select an obligation</span>
+            <span id="evidenceBbox" class="faint shrink-0" style="font-family: ui-monospace, monospace; font-size: 11px">BBox: [—, —, —, —]</span>
           </div>
-
-          <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-            <span id="evidenceFinding" class="text-slate-300"></span>
-          </div>
+          <blockquote
+            id="evidenceQuote"
+            class="p-3 rounded-r text-sm leading-relaxed italic"
+            style="border-left: 3px solid var(--accent); background: var(--accent-soft); color: var(--text)"
+          >
+            Select an obligation from the Financial Audit Ledger to highlight the exact legal covenant extracted from the Section 106 deed.
+          </blockquote>
+          <div id="evidenceFinding" class="text-xs muted mt-3 pt-3 hairline-soft border-t"></div>
         </div>
       </div>
 
-      <!-- Live LangGraph SSE Telemetry -->
-      <div class="bg-slate-900 border border-slate-800 rounded-lg p-4">
+      <!-- Recovery bridge chart -->
+      <div class="panel p-4">
+        <h2 class="text-sm font-semibold panel-title">Recovery Bridge</h2>
+        <p class="text-xs muted mt-0.5 mb-2">Nominal deed sum → indexation uplift → receipts → recoverable shortfall</p>
+        <div id="bridgeChart"></div>
+      </div>
+
+      <!-- Telemetry -->
+      <div class="panel p-4">
         <div class="flex items-center justify-between mb-2">
-          <h2 class="text-sm font-semibold text-white">Live LangGraph Agent Telemetry (SSE)</h2>
-          <span id="sseStatusBadge" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-300">Idle</span>
+          <h2 class="text-sm font-semibold panel-title">Live Agent Telemetry (SSE)</h2>
+          <span id="sseStatusBadge" class="chip chip-slate">Idle</span>
         </div>
-        <div
-          id="telemetryLog"
-          class="bg-slate-950 border border-slate-800 rounded p-3 h-44 overflow-y-auto font-mono text-xs space-y-1.5"
-        ></div>
+        <div id="telemetryLog" class="panel-inset p-3 h-52 overflow-y-auto text-xs space-y-1.5" style="font-family: ui-monospace, monospace"></div>
       </div>
     </div>
 
-    <!-- Right Column: Financial Audit Ledger & PostGIS Sheffield Ward Map (7 cols) -->
-    <div class="lg:col-span-7 flex flex-col gap-4">
-      <!-- Financial Audit Ledger -->
-      <div class="bg-slate-900 border border-slate-800 rounded-lg p-4">
-        <div class="flex items-center justify-between mb-3">
-          <div>
-            <h2 class="text-sm font-semibold text-white">Financial Audit Ledger (Deterministic SQL Math)</h2>
-            <p class="text-xs text-slate-400">
-              Compares deed triggers, ONS/BCIS indexation multipliers, and Sheffield City Council bank receipts
-            </p>
-          </div>
+    <!-- Right column -->
+    <div class="xl:col-span-7 flex flex-col gap-4">
+      <!-- Ledger -->
+      <div class="panel p-4">
+        <div class="mb-3">
+          <h2 class="text-sm font-semibold panel-title">Financial Audit Ledger (deterministic SQL math)</h2>
+          <p class="text-xs muted mt-0.5">
+            Deed triggers, ONS/BCIS indexation multipliers and Sheffield City Council receipts, reconciled per obligation
+          </p>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse text-xs">
+          <table class="ledger">
+            <colgroup>
+              <col style="width: 29%" />
+              <col style="width: 8%" />
+              <col style="width: 12%" />
+              <col style="width: 14%" />
+              <col style="width: 12%" />
+              <col style="width: 15%" />
+              <col style="width: 10%" />
+            </colgroup>
             <thead>
-              <tr class="border-b border-slate-800 text-slate-400 uppercase tracking-wider text-[11px]">
-                <th class="py-2 px-2">Obligation</th>
-                <th class="py-2 px-2">Trigger</th>
-                <th class="py-2 px-2">Base (£)</th>
-                <th class="py-2 px-2">Indexed (£)</th>
-                <th class="py-2 px-2">Received (£)</th>
-                <th class="py-2 px-2">Shortfall (£)</th>
-                <th class="py-2 px-2">Status</th>
+              <tr>
+                <th>Obligation</th>
+                <th>Trigger</th>
+                <th class="num">Base</th>
+                <th class="num">Indexed</th>
+                <th class="num">Received</th>
+                <th class="num">Shortfall</th>
+                <th>Status</th>
               </tr>
             </thead>
-            <tbody id="ledgerTableBody" class="divide-y divide-slate-800/70"></tbody>
+            <tbody id="ledgerTableBody"></tbody>
           </table>
         </div>
       </div>
 
-      <!-- PostGIS Sheffield Electoral Ward Map -->
-      <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 flex-1 flex flex-col">
-        <div class="flex items-center justify-between mb-2">
+      <!-- Charts row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="panel p-4">
+          <h2 class="text-sm font-semibold panel-title">Indexation Uplift by Obligation</h2>
+          <p class="text-xs muted mt-0.5 mb-2">Nominal base vs indexed liability — the uplift SQL added, never the LLM</p>
+          <div id="upliftChart"></div>
+        </div>
+        <div class="panel p-4">
+          <h2 class="text-sm font-semibold panel-title">Uncollected Shortfall by Ward</h2>
+          <p class="text-xs muted mt-0.5 mb-2">PostGIS rollup across Sheffield electoral wards</p>
+          <div id="wardChart"></div>
+        </div>
+      </div>
+
+      <!-- Map -->
+      <div class="panel p-4">
+        <div class="flex items-start justify-between gap-3 mb-2">
           <div>
-            <h2 class="text-sm font-semibold text-white">Sheffield Electoral Ward S106 Shortfall Map (PostGIS)</h2>
-            <p class="text-xs text-slate-400">
-              Spatial aggregation of uncollected S106 contributions across Sheffield wards
+            <h2 class="text-sm font-semibold panel-title">Sheffield Electoral Ward Shortfall Map (PostGIS)</h2>
+            <p class="text-xs muted mt-0.5">
+              Spatial aggregation of uncollected S106 contributions. Tiles © OpenStreetMap contributors (no API key).
             </p>
           </div>
+          <div class="flex items-center gap-2 text-[11px] muted shrink-0">
+            <span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--red)"></i> &gt;£500k</span>
+            <span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--amber)"></i> &gt;£100k</span>
+            <span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--green)"></i> clear</span>
+          </div>
         </div>
-        <div id="wardMap" class="flex-1"></div>
+        <div id="wardMap"></div>
       </div>
     </div>
   </main>
 
   <script>
+    "use strict";
+
     let currentPlanningRef = "21/04512/FUL";
     let currentDiscrepancies = [];
+    let currentReport = null;
     let mapInstance = null;
     let geojsonLayer = null;
 
+    /* ------------------------------------------------------------------ *
+     * Theme
+     * ------------------------------------------------------------------ */
+    const THEMES = ["auto", "light", "dark"];
+    const THEME_GLYPH = { auto: "◐", light: "☀", dark: "☾" };
+
+    function cycleTheme() {
+      const cur = document.documentElement.dataset.theme || "auto";
+      const next = THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length];
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem("s106-theme", next);
+      document.getElementById("themeToggle").textContent =
+        `${THEME_GLYPH[next]} ${next[0].toUpperCase() + next.slice(1)}`;
+      // Leaflet controls sit above the tile filter, so nudge a redraw.
+      if (mapInstance) setTimeout(() => mapInstance.invalidateSize(), 60);
+    }
+
+    function initThemeButton() {
+      const cur = document.documentElement.dataset.theme || "auto";
+      document.getElementById("themeToggle").textContent =
+        `${THEME_GLYPH[cur] || "◐"} ${cur[0].toUpperCase() + cur.slice(1)}`;
+    }
+
+    // Keep charts and the map honest when the OS flips while the tab is open.
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+      if (mapInstance) mapInstance.invalidateSize();
+    });
+
+    /* ------------------------------------------------------------------ *
+     * Formatting helpers
+     * ------------------------------------------------------------------ */
     function fmtGBP(val) {
       return "£" + Number(val || 0).toLocaleString("en-GB", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: 2, maximumFractionDigits: 2,
       });
     }
-
-    function statusBadge(status) {
-      const styles = {
-        TRIGGERED_UNPAID: "bg-red-950 text-red-300 border-red-700",
-        UNDERPAID_INDEXATION: "bg-amber-950 text-amber-300 border-amber-700",
-        PENDING_TRIGGER: "bg-slate-800 text-slate-300 border-slate-600",
-        COMPLIANT: "bg-emerald-950 text-emerald-300 border-emerald-700",
-      };
-      const cls = styles[status] || "bg-slate-800 text-slate-300 border-slate-700";
-      return `<span class="border px-2 py-0.5 rounded text-[10px] font-semibold ${cls}">${status}</span>`;
+    // Ledger cells drop the pence: four six-figure columns with decimals is what
+    // made the money columns collide. Exact-to-the-penny values stay in the KPI
+    // cards, the demand notice, and every cell's tooltip.
+    function fmtGBP0(val) {
+      return "£" + Math.round(Number(val || 0)).toLocaleString("en-GB");
+    }
+    function fmtGBPshort(val) {
+      const v = Number(val || 0);
+      if (Math.abs(v) >= 1e6) return "£" + (v / 1e6).toFixed(2) + "m";
+      if (Math.abs(v) >= 1e3) return "£" + Math.round(v / 1e3) + "k";
+      return "£" + Math.round(v);
+    }
+    function esc(s) {
+      return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     }
 
+    // Short, human chips. The full enum stays available as a tooltip so the
+    // audit trail is never lost — it just stops breaking the table layout.
+    const STATUS_META = {
+      TRIGGERED_UNPAID:    { label: "Unpaid",     cls: "chip-red",    tip: "TRIGGERED_UNPAID — trigger passed, nothing received" },
+      UNDERPAID_INDEXATION:{ label: "Index gap",  cls: "chip-amber",  tip: "UNDERPAID_INDEXATION — base paid, indexation uplift omitted" },
+      PENDING_TRIGGER:     { label: "Pending",    cls: "chip-slate",  tip: "PENDING_TRIGGER — threshold not yet reached" },
+      COMPLIANT:           { label: "Paid",       cls: "chip-green",  tip: "COMPLIANT — paid in full including indexation" },
+      OVERDUE:             { label: "Overdue",    cls: "chip-red",    tip: "OVERDUE — past due for payment" },
+    };
+    function statusChip(status) {
+      const m = STATUS_META[status] || { label: status, cls: "chip-slate", tip: status };
+      return `<span class="chip ${m.cls}" title="${esc(m.tip)}">${esc(m.label)}</span>`;
+    }
+
+    /* ------------------------------------------------------------------ *
+     * Inline SVG charts — no charting library, so nothing extra to fetch
+     * (which matters when the room is air-gapped).
+     * ------------------------------------------------------------------ */
+    const SVG_NS = "http://www.w3.org/2000/svg";
+
+    function svgEl(tag, attrs) {
+      const el = document.createElementNS(SVG_NS, tag);
+      for (const k in attrs) el.setAttribute(k, attrs[k]);
+      return el;
+    }
+
+    /**
+     * Waterfall: base -> +indexation -> -received -> -not-yet-triggered -> recoverable.
+     * The last step is shown explicitly so the bridge always reconciles.
+     */
+    function renderBridge(mount, steps) {
+      const host = document.getElementById(mount);
+      if (!host) return;
+      host.innerHTML = "";
+
+      const W = 460, H = 190, padL = 8, padR = 8, padT = 18, padB = 34;
+      const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, class: "chart", role: "img" });
+
+      // Scale to the tallest *cumulative* running total, not the tallest single
+      // step — otherwise the post-indexation bar climbs out of the plot area.
+      let peak = 0;
+      const peaks = [];
+      steps.forEach((s) => {
+        if (s.kind === "total") peak = s.value;
+        else peak = s.sign > 0 ? peak + s.value : peak - s.value;
+        peaks.push(peak);
+      });
+      const scale = Math.max(...peaks, 1);
+
+      const slot = (W - padL - padR) / steps.length;
+      const barW = Math.min(58, slot * 0.62);
+      const plotH = H - padT - padB;
+      const y0 = padT + plotH;
+
+      svg.appendChild(svgEl("line", { class: "axis", x1: padL, y1: y0, x2: W - padR, y2: y0 }));
+
+      let running = 0;
+      steps.forEach((s, i) => {
+        const cx = padL + slot * i + (slot - barW) / 2;
+        let top, bottom;
+        if (s.kind === "total") {
+          top = padT + plotH * (1 - s.value / scale);
+          bottom = y0;
+          running = s.value;
+        } else {
+          const from = running;
+          running = s.sign > 0 ? running + s.value : running - s.value;
+          const a = padT + plotH * (1 - Math.max(from, running) / scale);
+          const b = padT + plotH * (1 - Math.min(from, running) / scale);
+          top = a; bottom = Math.max(b, a + 2);
+        }
+        const h = Math.max(bottom - top, 2);
+        svg.appendChild(svgEl("rect", {
+          x: cx, y: top, width: barW, height: h, rx: 3,
+          class: s.cls, opacity: s.kind === "connector" ? 0.85 : 1,
+        }));
+
+        const label = svgEl("text", { x: cx + barW / 2, y: H - 20, "text-anchor": "middle" });
+        label.textContent = s.label;
+        svg.appendChild(label);
+
+        const val = svgEl("text", { x: cx + barW / 2, y: top - 5, "text-anchor": "middle" });
+        val.textContent = (s.sign < 0 ? "−" : "") + fmtGBPshort(s.value);
+        svg.appendChild(val);
+      });
+
+      host.appendChild(svg);
+    }
+
+  /** Grouped bars: nominal base vs indexed liability, one pair per obligation. */
+    function renderUplift(mount, rows) {
+      const host = document.getElementById(mount);
+      if (!host) return;
+      host.innerHTML = "";
+      if (!rows.length) { host.innerHTML = '<p class="text-xs faint">No obligations.</p>'; return; }
+
+      const W = 460, H = 190, padL = 8, padR = 8, padT = 16, padB = 40;
+      const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, class: "chart", role: "img" });
+      const scale = Math.max(...rows.map((r) => Math.max(r.base, r.indexed)), 1);
+      const slot = (W - padL - padR) / rows.length;
+      const barW = Math.min(22, slot * 0.3);
+      const plotH = H - padT - padB;
+      const y0 = padT + plotH;
+
+      svg.appendChild(svgEl("line", { class: "axis", x1: padL, y1: y0, x2: W - padR, y2: y0 }));
+
+      rows.forEach((r, i) => {
+        const cx = padL + slot * i + slot / 2;
+        const hb = plotH * (r.base / scale);
+        const hi = plotH * (r.indexed / scale);
+        svg.appendChild(svgEl("rect", { x: cx - barW - 2, y: y0 - hb, width: barW, height: Math.max(hb, 2), rx: 2, class: "bar-base" }));
+        svg.appendChild(svgEl("rect", { x: cx + 2, y: y0 - hi, width: barW, height: Math.max(hi, 2), rx: 2, class: "bar-uplift" }));
+
+        const t = svgEl("text", { x: cx, y: H - 26, "text-anchor": "middle" });
+        t.textContent = "×" + (r.base > 0 ? (r.indexed / r.base).toFixed(3) : "1.000");
+        svg.appendChild(t);
+        const t2 = svgEl("text", { x: cx, y: H - 13, "text-anchor": "middle", opacity: 0.75 });
+        t2.textContent = r.short;
+        svg.appendChild(t2);
+      });
+
+      host.appendChild(svg);
+    }
+
+    /** Horizontal bars of uncollected shortfall per ward. */
+    function renderWardBars(mount, wards) {
+      const host = document.getElementById(mount);
+      if (!host) return;
+      host.innerHTML = "";
+      if (!wards.length) { host.innerHTML = '<p class="text-xs faint">No ward data.</p>'; return; }
+
+      const rows = wards.slice().sort((a, b) => b.uncollected_shortfall_gbp - a.uncollected_shortfall_gbp);
+      const max = Math.max(...rows.map((w) => w.uncollected_shortfall_gbp), 1);
+      const rowH = 30, W = 460, padR = 74;
+      const H = rows.length * rowH + 10;
+      const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, class: "chart", role: "img" });
+      const trackW = W - padR - 4;
+
+      rows.forEach((w, i) => {
+        const y = i * rowH + 4;
+        const frac = w.uncollected_shortfall_gbp / max;
+        const color = w.uncollected_shortfall_gbp > 5e5 ? "var(--red)"
+                    : w.uncollected_shortfall_gbp > 1e5 ? "var(--amber)" : "var(--green)";
+
+        const name = svgEl("text", { x: 0, y: y + 10 });
+        name.textContent = w.ward_name;
+        svg.appendChild(name);
+
+        svg.appendChild(svgEl("rect", { x: 0, y: y + 14, width: trackW, height: 8, rx: 4, class: "mini-track" }));
+        svg.appendChild(svgEl("rect", { x: 0, y: y + 14, width: Math.max(trackW * frac, 2), height: 8, rx: 4, style: `fill:${color}` }));
+
+        const v = svgEl("text", { x: W, y: y + 21, "text-anchor": "end" });
+        v.textContent = fmtGBPshort(w.uncollected_shortfall_gbp);
+        svg.appendChild(v);
+      });
+
+      host.appendChild(svg);
+    }
+
+    /* ------------------------------------------------------------------ *
+     * Data loading + rendering
+     * ------------------------------------------------------------------ */
     async function loadAgreements() {
       const res = await fetch("/api/agreements");
       const agreements = await res.json();
       const sel = document.getElementById("agreementSelect");
       sel.innerHTML = agreements
-        .map(
-          (a) =>
-            `<option value="${a.planning_reference}">${a.planning_reference} — ${a.site_name} (${a.ward_name})</option>`
-        )
+        .map((a) => `<option value="${esc(a.planning_reference)}">${esc(a.planning_reference)} — ${esc(a.site_name)} (${esc(a.ward_name)})</option>`)
         .join("");
       sel.addEventListener("change", (e) => {
         currentPlanningRef = e.target.value;
@@ -257,10 +668,15 @@
       }
       document.getElementById("evidenceQuote").textContent = `"${d.evidence.verbatim_quote}"`;
       document.getElementById("evidenceFinding").textContent = d.finding_summary;
+
+      document.querySelectorAll("table.ledger tr.row").forEach((tr, i) =>
+        tr.classList.toggle("active", i === idx));
     }
 
     function renderAuditReport(report) {
+      currentReport = report;
       currentDiscrepancies = report.discrepancies || [];
+
       document.getElementById("kpiOccupation").textContent =
         `${report.dwellings_occupied} / ${report.dwellings_permitted} Dwellings`;
       document.getElementById("kpiSiteName").textContent =
@@ -268,101 +684,117 @@
       document.getElementById("kpiBase").textContent = fmtGBP(report.total_base_gbp);
       document.getElementById("kpiIndexed").textContent = fmtGBP(report.total_indexed_gbp);
       document.getElementById("kpiReceived").textContent = fmtGBP(report.total_received_gbp);
-      document.getElementById("kpiShortfall").textContent = fmtGBP(
-        report.total_recoverable_shortfall_gbp
-      );
+      document.getElementById("kpiShortfall").textContent = fmtGBP(report.total_recoverable_shortfall_gbp);
 
       const tbody = document.getElementById("ledgerTableBody");
-      tbody.innerHTML = currentDiscrepancies
-        .map(
-          (d, idx) => `
-          <tr
-            onclick="selectEvidence(${idx})"
-            class="hover:bg-slate-800/70 cursor-pointer transition"
-          >
-            <td class="py-2.5 px-2">
-              <div class="font-semibold text-white">${d.title}</div>
-              <div class="text-[11px] text-slate-400">${d.obligation_id} • ${d.evidence.clause_reference}</div>
-            </td>
-            <td class="py-2.5 px-2 text-slate-300">
-              ${d.trigger_threshold ? d.trigger_threshold + "th Dwelling" : "On Deed"}
-            </td>
-            <td class="py-2.5 px-2 font-mono text-slate-300">${fmtGBP(d.base_amount_gbp)}</td>
-            <td class="py-2.5 px-2 font-mono text-amber-300">${fmtGBP(d.indexed_amount_gbp)}</td>
-            <td class="py-2.5 px-2 font-mono text-emerald-300">${fmtGBP(d.amount_received_gbp)}</td>
-            <td class="py-2.5 px-2 font-mono font-bold ${
-              d.shortfall_gbp > 0 ? "text-red-400" : "text-slate-400"
-            }">${fmtGBP(d.shortfall_gbp)}</td>
-            <td class="py-2.5 px-2">${statusBadge(d.status)}</td>
-          </tr>
-        `
-        )
-        .join("");
+      tbody.innerHTML = currentDiscrepancies.map((d, idx) => {
+        const indexed = Number(d.indexed_amount_gbp) || 0;
+        const received = Number(d.amount_received_gbp) || 0;
+        const shortfall = Number(d.shortfall_gbp) || 0;
+        const recPct = indexed > 0 ? Math.min(100, (received / indexed) * 100) : 0;
+        const shPct = indexed > 0 ? Math.min(100 - recPct, (shortfall / indexed) * 100) : 0;
+        const mult = d.base_amount_gbp > 0 ? (indexed / d.base_amount_gbp).toFixed(3) : "1.000";
 
-      if (currentDiscrepancies.length > 0) {
-        selectEvidence(0);
-      }
+        return `
+          <tr class="row" tabindex="0" onclick="selectEvidence(${idx})"
+              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectEvidence(${idx})}">
+            <td>
+              <div class="obl-title">${esc(d.title)}</div>
+              <div class="obl-ref" title="${esc(d.obligation_id + ' • ' + d.evidence.clause_reference)}">${esc(d.obligation_id)} • ${esc(d.evidence.clause_reference)}</div>
+            </td>
+            <td class="text-xs muted" style="white-space:nowrap">${d.trigger_threshold ? esc(d.trigger_threshold) + "th" : "Deed"}</td>
+            <td class="num" style="color: var(--text-muted)" title="${fmtGBP(d.base_amount_gbp)}">${fmtGBP0(d.base_amount_gbp)}</td>
+            <td class="num" style="color: var(--amber)" title="${fmtGBP(indexed)}">${fmtGBP0(indexed)}<div class="mult">×${mult}</div></td>
+            <td class="num" style="color: var(--green)" title="${fmtGBP(received)}">${fmtGBP0(received)}</td>
+            <td class="num" style="color:${shortfall > 0 ? "var(--red)" : "var(--text-faint)"}; font-weight:700" title="${fmtGBP(shortfall)}">
+              ${fmtGBP0(shortfall)}
+              <div class="bar-mini" title="Received ${fmtGBP(received)} · Shortfall ${fmtGBP(shortfall)}">
+                <i style="width:${recPct}%; background: var(--green)"></i>
+                <i style="width:${shPct}%; background: var(--red)"></i>
+              </div>
+            </td>
+            <td>${statusChip(d.status)}</td>
+          </tr>`;
+      }).join("");
+
+      if (currentDiscrepancies.length > 0) selectEvidence(0);
+
+      // Recovery bridge — the final step makes the arithmetic reconcile.
+      const uplift = Math.max(0, report.total_indexed_gbp - report.total_base_gbp);
+      const notTriggered = Math.max(0, report.total_indexed_gbp - report.total_received_gbp - report.total_recoverable_shortfall_gbp);
+      renderBridge("bridgeChart", [
+        { label: "Base",      value: report.total_base_gbp,               kind: "total",     cls: "bar-base" },
+        { label: "Indexation",value: uplift,                              kind: "delta", sign: +1, cls: "bar-uplift" },
+        { label: "Received",  value: report.total_received_gbp,           kind: "delta", sign: -1, cls: "bar-received" },
+        { label: "Untriggered", value: notTriggered,                      kind: "delta", sign: -1, cls: "bar-base" },
+        { label: "Recoverable", value: report.total_recoverable_shortfall_gbp, kind: "total", cls: "bar-shortfall" },
+      ]);
+
+      renderUplift("upliftChart", currentDiscrepancies.map((d) => ({
+        base: Number(d.base_amount_gbp) || 0,
+        indexed: Number(d.indexed_amount_gbp) || 0,
+        short: (d.title || "").split(" ")[0].slice(0, 10),
+      })));
     }
 
     async function loadWardMap() {
       if (!mapInstance) {
-        mapInstance = L.map("wardMap").setView([53.3811, -1.488], 12);
-        L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-          attribution: "&copy; OpenStreetMap &copy; CARTO",
+        mapInstance = L.map("wardMap", { scrollWheelZoom: false }).setView([53.3811, -1.488], 11);
+        // Plain OpenStreetMap raster tiles: no API key, no account, no watermark.
+        // Dark mode is derived with a CSS filter on .leaflet-tile, so one tile
+        // source serves both palettes.
+        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "&copy; OpenStreetMap contributors",
+          maxZoom: 19,
         }).addTo(mapInstance);
+
+        new ResizeObserver(() => mapInstance.invalidateSize()).observe(document.getElementById("wardMap"));
       }
 
       const res = await fetch("/api/wards");
       const wards = await res.json();
 
-      if (geojsonLayer) {
-        mapInstance.removeLayer(geojsonLayer);
-      }
+      if (geojsonLayer) mapInstance.removeLayer(geojsonLayer);
 
       const features = wards.map((w) => {
         const f = w.geojson;
-        f.properties = { ...w };
+        f.properties = { ...w, geojson: undefined };
         return f;
       });
 
       geojsonLayer = L.geoJSON(features, {
         style: (feature) => {
-          const shortfall = feature.properties.uncollected_shortfall_gbp || 0;
-          const fillColor =
-            shortfall > 500000
-              ? "#ef4444"
-              : shortfall > 100000
-              ? "#f59e0b"
-              : "#10b981";
-          return {
-            color: "#e2e8f0",
-            weight: 1.5,
-            fillColor,
-            fillOpacity: 0.45,
-          };
+          const s = feature.properties.uncollected_shortfall_gbp || 0;
+          const fillColor = s > 5e5 ? "#dc2626" : s > 1e5 ? "#d97706" : "#059669";
+          return { color: "#ffffff", weight: 1.5, fillColor, fillOpacity: 0.5 };
         },
         onEachFeature: (feature, layer) => {
           const p = feature.properties;
           layer.bindPopup(`
-            <div style="color:#0f172a;font-size:12px;">
-              <strong>${p.ward_name} Ward (${p.ward_code})</strong><br/>
-              Agreements Audited: ${p.agreements_count}<br/>
-              Indexed Total: ${fmtGBP(p.total_indexed_gbp)}<br/>
+            <div style="font-size:12px;line-height:1.5">
+              <strong>${esc(p.ward_name)} Ward</strong> (${esc(p.ward_code)})<br/>
+              Agreements audited: ${p.agreements_count}<br/>
+              Indexed total: ${fmtGBP(p.total_indexed_gbp)}<br/>
               Received: ${fmtGBP(p.total_received_gbp)}<br/>
-              <strong style="color:#dc2626;">Uncollected Shortfall: ${fmtGBP(p.uncollected_shortfall_gbp)}</strong>
-            </div>
-          `);
+              <strong style="color:var(--red)">Uncollected: ${fmtGBP(p.uncollected_shortfall_gbp)}</strong>
+            </div>`);
         },
       }).addTo(mapInstance);
+
+      try { mapInstance.fitBounds(geojsonLayer.getBounds(), { padding: [16, 16] }); } catch (e) {}
+      renderWardBars("wardChart", wards);
     }
 
+    /* ------------------------------------------------------------------ *
+     * SSE telemetry stream
+     * ------------------------------------------------------------------ */
     function appendTelemetry(evt) {
       const log = document.getElementById("telemetryLog");
       const time = new Date(evt.timestamp).toLocaleTimeString();
-      const color =
-        evt.status === "COMPLETED" ? "text-lime-400" : "text-sky-400";
+      const color = evt.status === "COMPLETED" ? "var(--accent-text)" : "var(--amber)";
       const line = document.createElement("div");
-      line.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="${color} font-semibold">[${evt.agent_node}]</span> <span class="text-slate-200">${evt.message}</span>`;
+      line.className = "telemetry-line";
+      line.innerHTML = `<span class="faint">[${time}]</span> <span style="color:${color};font-weight:600">[${esc(evt.agent_node)}]</span> <span>${esc(evt.message)}</span>`;
       log.appendChild(line);
       log.scrollTop = log.scrollHeight;
     }
@@ -371,8 +803,8 @@
       const log = document.getElementById("telemetryLog");
       log.innerHTML = "";
       const badge = document.getElementById("sseStatusBadge");
-      badge.textContent = "Streaming LangGraph...";
-      badge.className = "text-[11px] px-2 py-0.5 rounded bg-lime-950 text-lime-300 border border-lime-700";
+      badge.textContent = "Streaming…";
+      badge.className = "chip chip-accent";
 
       const url = `/api/audit/stream?planning_reference=${encodeURIComponent(currentPlanningRef)}`;
       const evtSource = new EventSource(url);
@@ -381,17 +813,17 @@
         const evt = JSON.parse(e.data);
         appendTelemetry(evt);
         if (evt.agent_node === "report_synthesizer" && evt.status === "COMPLETED") {
-          if (evt.payload && evt.payload.report) {
-            renderAuditReport(evt.payload.report);
-          }
-          badge.textContent = "Audit Complete";
+          if (evt.payload && evt.payload.report) renderAuditReport(evt.payload.report);
+          badge.textContent = "Audit complete";
+          badge.className = "chip chip-green";
           evtSource.close();
         }
       };
 
       evtSource.onerror = () => {
         evtSource.close();
-        badge.textContent = "Audit Ready";
+        badge.textContent = "Audit ready";
+        badge.className = "chip chip-slate";
       };
     }
 
@@ -400,6 +832,7 @@
     }
 
     window.addEventListener("DOMContentLoaded", async () => {
+      initThemeButton();
       await loadAgreements();
       await loadWardMap();
       startLiveAudit();
