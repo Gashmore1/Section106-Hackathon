@@ -13,9 +13,16 @@
     })();
   </script>
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!--
+    Vendored, never CDN. The auditor is meant to run air-gapped on the Spark, and
+    a render-blocking <script src="https://..."> in <head> makes the whole
+    dashboard wait on the network: when the CDN is unreachable the page sits
+    blank and no API call is ever made. Pinned versions, served from /vendor.
+    tailwind.js is the official Play CDN build pinned to 3.4.16.
+  -->
+  <script src="/vendor/tailwind.js"></script>
+  <link rel="stylesheet" href="/vendor/leaflet/leaflet.css" />
+  <script src="/vendor/leaflet/leaflet.js"></script>
 
   <style>
     /* ------------------------------------------------------------------ *
@@ -551,6 +558,10 @@
         <div class="flex items-start justify-between gap-3 mb-2">
           <div>
             <h2 class="text-sm font-semibold panel-title">Sheffield Electoral Ward Shortfall Map (PostGIS)</h2>
+            <p class="text-[11px] muted mt-0.5">
+              Ward boundaries and shortfall colours come from the local PostGIS ledger.
+              Only the OpenStreetMap basemap tiles need internet; offline the wards still render.
+            </p>
             <p class="text-xs muted mt-0.5">
               Spatial aggregation of uncollected S106 contributions. Tiles © OpenStreetMap contributors (no API key).
             </p>
@@ -810,6 +821,11 @@
       if (Math.abs(n) >= 1e6) return "£" + (n / 1e6).toFixed(1) + "m";
       if (Math.abs(n) >= 1e3) return "£" + Math.round(n / 1e3) + "k";
       return fmtGBP(n);
+    }
+
+    async function loadOverview() {
+      // Independent panels, so one slow or missing endpoint cannot hold up the rest.
+      await Promise.allSettled([loadNational(), loadGroundTruthOverview(), loadOverviewDeeds()]);
     }
 
     async function loadNational() {
@@ -1364,10 +1380,19 @@
     window.addEventListener("DOMContentLoaded", async () => {
       initThemeButton();
       showView("overview");
-      const hasDeeds = await loadAgreements();
-      loadPortfolio();
-      loadOverview();
-      await loadWardMap();
+      // One dead panel must not blank the dashboard. Each loader reports its own
+      // failure and the rest still render.
+      const safe = (fn) =>
+        Promise.resolve()
+          .then(fn)
+          .catch((err) => {
+            console.error("[dashboard] " + fn.name + " failed:", err);
+            return null;
+          });
+      const hasDeeds = await safe(loadAgreements);
+      safe(loadPortfolio);
+      safe(loadOverview);
+      await safe(loadWardMap);
       if (hasDeeds) startLiveAudit();
     });
   </script>

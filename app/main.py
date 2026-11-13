@@ -17,6 +17,7 @@ from docx import Document
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 
 from agents.extractor import (
     AVAILABLE_SPARK_MODELS,
@@ -58,6 +59,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Tailwind and Leaflet are served from disk so the dashboard has no CDN
+# dependency: a blocked or slow unpkg used to leave the page blank, because the
+# blocking <script> in <head> never resolved.
+VENDOR_DIR = FRONTEND_DIR / "vendor"
+if VENDOR_DIR.exists():
+    app.mount(
+        "/vendor",
+        StaticFiles(directory=VENDOR_DIR),
+        name="vendor",
+    )
 
 
 @app.exception_handler(AgreementNotFoundError)
