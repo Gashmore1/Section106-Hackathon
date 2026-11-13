@@ -1,13 +1,16 @@
 """
-Track 2: Local LLM Structured Output Extractor for NVIDIA DGX Spark.
-Supports both:
-- Ollama OpenAI-compatible endpoint (`http://localhost:11434/v1`) using `response_format` / `format=schema`
-- vLLM OpenAI-compatible endpoint (`http://localhost:8000/v1`) using `extra_body={"guided_json": schema}`
+Track 2: Local Nemotron / Ollama / vLLM Structured Output Extractor for NVIDIA DGX Spark.
 
-Preloaded DGX Spark models:
-- `qwen3.6:35b-a3b` (default)
-- `nemotron-3.5-lightning:30b`
-- `nemotron-3-nano:30b`
+Supports:
+- Organiser Ollama `/api/chat` endpoint on SSH tunnel (`http://127.0.0.1:11435/api/chat`)
+  or on-Spark (`http://127.0.0.1:11434/api/chat`) with:
+  `"stream": False, "think": False, "keep_alive": 0, "format": schema, "options": {"num_ctx": 8192}`
+- vLLM OpenAI-compatible endpoint (`http://127.0.0.1:8000/v1`) with `extra_body={"guided_json": schema}`
+
+Preloaded DGX Spark models (Nemotron earns the hackathon bonus):
+- `nemotron-3.5-lightning:30b` (default: classifying, extracting, routing)
+- `nemotron-3-nano:30b` (reasoning and code)
+- `qwen3.6:35b-a3b` (images + text/code)
 """
 
 from __future__ import annotations
@@ -18,6 +21,7 @@ import os
 from datetime import date
 from typing import Any, Optional
 
+import httpx
 from openai import AsyncOpenAI
 
 from agents.pdf_parser import ParsedTextBlock, format_blocks_for_llm
@@ -37,115 +41,150 @@ from shared.schemas import (
 logger = logging.getLogger(__name__)
 
 AVAILABLE_SPARK_MODELS: tuple[str, ...] = (
-    "qwen3.6:35b-a3b",
     "nemotron-3.5-lightning:30b",
     "nemotron-3-nano:30b",
+    "qwen3.6:35b-a3b",
 )
 
-# Default to Ollama on the DGX Spark (:11434/v1), with automatic fallback to vLLM (:8000/v1)
-VLLM_BASE_URL = os.getenv("VLLM_BASE_URL", "http://localhost:11434/v1")
+# Default to organiser SSH tunnel port (11435), with automatic fallback to on-Spark (11434) and vLLM (8000)
+VLLM_BASE_URL = os.getenv("VLLM_BASE_URL", "http://127.0.0.1:11435")
 VLLM_API_KEY = os.getenv("VLLM_API_KEY", "ollama")
 VLLM_MODEL_NAME = os.getenv("VLLM_MODEL_NAME", AVAILABLE_SPARK_MODELS[0])
 
+LLM_NUM_CTX = int(os.getenv("LLM_NUM_CTX", "8192"))
+LLM_NUM_PREDICT = int(os.getenv("LLM_NUM_PREDICT", "2048"))
+LLM_KEEP_ALIVE = int(os.getenv("LLM_KEEP_ALIVE", "0"))
+
 
 def _is_ollama_endpoint(base_url: str) -> bool:
-    """Detect whether the target OpenAI-compatible server is Ollama vs vLLM."""
+    """Detect whether the target server is Ollama (11434/11435) vs vLLM (8000)."""
     backend_env = os.getenv("LLM_BACKEND", "").strip().lower()
     if backend_env in ("ollama", "vllm"):
         return backend_env == "ollama"
-    return "11434" in base_url or "ollama" in base_url.lower()
+    return (
+        "11434" in base_url
+        or "11435" in base_url
+        or "ollama" in base_url.lower()
+    )
 
 
-def _normalize_openai_base_url(base_url: str) -> str:
-    """Ensure base_url ends with `/v1` when using the OpenAI client."""
+def _ollama_root_url(base_url: str) -> str:
+    """Strip trailing `/v1` or `/api/chat` to get the Ollama root URL."""
     cleaned = base_url.rstrip("/")
-    if not cleaned.endswith("/v1"):
-        cleaned = f"{cleaned}/v1"
+    for suffix in ("/v1", "/api/chat"):
+        if cleaned.endswith(suffix):
+            cleaned = cleaned[: -len(suffix)]
     return cleaned
 
 
-def _build_structured_output_kwargs(
-    base_url: str, schema: dict[str, Any]
-) -> dict[str, Any]:
+async def _call_ollama_api_chat(
+    root_url: str,
+    model: str,
+    messages: list[dict[str, str]],
+    schema: dict[str, Any],
+) -> ExtractedAgreement:
     """
-    Build the structured-output request kwargs depending on whether we are targeting
-    Ollama (`:11434`) or vLLM (`:8000`).
+    Call Ollama's `/api/chat` endpoint using the exact organiser DGX Spark parameters:
+    `stream: false`, `think: false`, `keep_alive: 0`, `format: schema`,
+    `options: {num_ctx: 8192, num_predict: 2048, temperature: 0.0}`.
     """
-    if _is_ollama_endpoint(base_url):
-        # Ollama's OpenAI compatibility layer supports `response_format` (json_schema)
-        # and native `format: schema` via extra_body.
-        return {
-            "response_format": {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "ExtractedAgreement",
-                    "schema": schema,
-                },
-            },
-            "extra_body": {"format": schema},
-        }
-    # vLLM structured outputs via Outlines / XGrammar guided_json
-    return {
-        "extra_body": {"guided_json": schema},
+    endpoint = f"{_ollama_root_url(root_url)}/api/chat"
+    payload = {
+        "model": model,
+        "messages": messages,
+        "stream": False,
+        "think": False,
+        "keep_alive": LLM_KEEP_ALIVE,
+        "format": schema,
+        "options": {
+            "num_ctx": LLM_NUM_CTX,
+            "num_predict": LLM_NUM_PREDICT,
+            "temperature": 0.0,
+        },
     }
+    async with httpx.AsyncClient(timeout=45.0) as client:
+        resp = await client.post(endpoint, json=payload)
+        resp.raise_for_status()
+        data = resp.json()
+        raw_content = data.get("message", {}).get("content", "{}")
+        return ExtractedAgreement.model_validate(json.loads(raw_content))
+
+
+async def _call_vllm_openai(
+    base_url: str,
+    model: str,
+    messages: list[dict[str, str]],
+    schema: dict[str, Any],
+) -> ExtractedAgreement:
+    """Call vLLM OpenAI-compatible `/v1/chat/completions` with `guided_json`."""
+    v1_url = base_url.rstrip("/")
+    if not v1_url.endswith("/v1"):
+        v1_url = f"{v1_url}/v1"
+    client = AsyncOpenAI(base_url=v1_url, api_key=VLLM_API_KEY, timeout=30.0)
+    response = await client.chat.completions.create(
+        model=model,
+        temperature=0.0,
+        messages=messages,  # type: ignore[arg-type]
+        extra_body={"guided_json": schema},
+    )
+    raw_json = response.choices[0].message.content or "{}"
+    return ExtractedAgreement.model_validate(json.loads(raw_json))
 
 
 async def extract_s106_obligations_vllm(
     blocks: Optional[list[ParsedTextBlock]] = None,
     planning_reference: str = "21/04512/FUL",
+    raw_text: Optional[str] = None,
     model_name: Optional[str] = None,
     base_url: Optional[str] = None,
 ) -> ExtractedAgreement:
     """
-    Query the local DGX Spark LLM server (Ollama or vLLM) with JSON schema enforcement.
-    Tries the configured endpoint first; if unreachable during local UI development,
-    falls back cleanly to deterministic structured extraction for `planning_reference`.
+    Query the local DGX Spark LLM (`nemotron-3.5-lightning:30b` by default) with structured
+    JSON schema output when `blocks` or `raw_text` are provided.
+    If no document text is provided (or if the Spark tunnel is offline during local UI dev),
+    returns the deterministic pre-extracted agreement for `planning_reference`.
     """
     target_model = model_name or VLLM_MODEL_NAME
-    primary_url = _normalize_openai_base_url(base_url or VLLM_BASE_URL)
+    primary_url = base_url or VLLM_BASE_URL
 
-    if blocks:
-        # Try configured endpoint first, then alternate local Spark port (11434 <-> 8000)
-        fallback_url = (
-            "http://localhost:8000/v1"
-            if "11434" in primary_url
-            else "http://localhost:11434/v1"
-        )
-        candidate_urls = [primary_url]
-        if fallback_url not in candidate_urls:
-            candidate_urls.append(fallback_url)
-
-        doc_text = format_blocks_for_llm(blocks)
+    doc_text = raw_text or (format_blocks_for_llm(blocks) if blocks else "")
+    if doc_text.strip():
         schema = ExtractedAgreement.model_json_schema()
+        messages = [
+            {"role": "system", "content": S106_EXTRACTION_SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": S106_EXTRACTION_USER_TEMPLATE.format(
+                    document_blocks_text=doc_text
+                ),
+            },
+        ]
 
-        for url in candidate_urls:
+        # Candidate endpoints in priority order:
+        # 1. Configured primary URL (default http://127.0.0.1:11435 SSH tunnel)
+        # 2. On-Spark direct Ollama (http://127.0.0.1:11434)
+        # 3. Local vLLM (http://127.0.0.1:8000/v1)
+        candidates = [primary_url]
+        for alt in (
+            "http://127.0.0.1:11435",
+            "http://127.0.0.1:11434",
+            "http://127.0.0.1:8000/v1",
+        ):
+            if _ollama_root_url(alt) not in [
+                _ollama_root_url(c) for c in candidates
+            ]:
+                candidates.append(alt)
+
+        for url in candidates:
             try:
-                client = AsyncOpenAI(
-                    base_url=url,
-                    api_key=VLLM_API_KEY,
-                    timeout=30.0,
-                )
-                structured_kwargs = _build_structured_output_kwargs(url, schema)
-
-                response = await client.chat.completions.create(
-                    model=target_model,
-                    temperature=0.0,
-                    messages=[
-                        {"role": "system", "content": S106_EXTRACTION_SYSTEM_PROMPT},
-                        {
-                            "role": "user",
-                            "content": S106_EXTRACTION_USER_TEMPLATE.format(
-                                document_blocks_text=doc_text
-                            ),
-                        },
-                    ],
-                    **structured_kwargs,
-                )
-                raw_json = response.choices[0].message.content or "{}"
-                return ExtractedAgreement.model_validate(json.loads(raw_json))
+                if _is_ollama_endpoint(url):
+                    return await _call_ollama_api_chat(
+                        url, target_model, messages, schema
+                    )
+                return await _call_vllm_openai(url, target_model, messages, schema)
             except Exception as exc:
                 logger.warning(
-                    "[extractor] Local LLM endpoint %s (model=%s) failed: %s",
+                    "[extractor] Local Spark endpoint %s (model=%s) unreachable: %s",
                     url,
                     target_model,
                     exc,
@@ -200,5 +239,6 @@ def _build_fallback_extraction(planning_reference: str) -> ExtractedAgreement:
         ward_name=agr["ward_name"],
         developer_name=agr["developer_name"],
         total_dwellings_permitted=int(agr["total_dwellings_permitted"]),
+        extraction_status="EXTRACTED",
         obligations=extracted_obligations,
     )

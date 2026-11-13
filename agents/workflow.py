@@ -113,47 +113,89 @@ async def stream_audit_workflow(
     """
     Execute the multi-agent auditing pipeline and yield real-time `AgentTelemetryEvent`
     records for Server-Sent Events (SSE) streaming to the dashboard.
+    Never fabricates block counts when no PDF file is attached.
     """
-    yield _make_event(
-        "pdf_parser",
-        "STARTED",
-        f"PyMuPDF scanning S106 deed for application {planning_reference} (extracting text blocks & bounding boxes)...",
-    )
-    await asyncio.sleep(0.35)
-
     blocks: list[ParsedTextBlock] = []
     if pdf_path:
+        yield _make_event(
+            "pdf_parser",
+            "STARTED",
+            f"PyMuPDF scanning attached deed '{pdf_path}' for {planning_reference}...",
+        )
+        await asyncio.sleep(0.25)
         try:
             blocks = parse_s106_pdf(pdf_path)
-        except Exception:
-            blocks = []
+            yield _make_event(
+                "pdf_parser",
+                "COMPLETED",
+                f"Parsed {len(blocks)} text blocks with bounding boxes from '{pdf_path}'.",
+                payload={"blocks_parsed": len(blocks), "pdf_attached": True},
+            )
+        except Exception as exc:
+            yield _make_event(
+                "pdf_parser",
+                "COMPLETED",
+                f"Could not read PDF '{pdf_path}' ({exc}); 0 blocks parsed.",
+                payload={"blocks_parsed": 0, "pdf_attached": False},
+            )
+    else:
+        yield _make_event(
+            "pdf_parser",
+            "STARTED",
+            f"Checking attached deed PDF for {planning_reference}...",
+        )
+        await asyncio.sleep(0.2)
+        yield _make_event(
+            "pdf_parser",
+            "COMPLETED",
+            f"No deed PDF attached for {planning_reference} (0 blocks parsed) — using pre-indexed seed covenant records.",
+            payload={"blocks_parsed": 0, "pdf_attached": False},
+        )
 
-    yield _make_event(
-        "pdf_parser",
-        "COMPLETED",
-        f"Extracted Schedule 1–4 covenant blocks and PDF coordinates for {planning_reference}.",
-        payload={"blocks_parsed": len(blocks) or 42},
-    )
-    await asyncio.sleep(0.35)
+    await asyncio.sleep(0.25)
 
     backend_label = "Ollama" if _is_ollama_endpoint(VLLM_BASE_URL) else "vLLM"
-    yield _make_event(
-        "vllm_extractor",
-        "STARTED",
-        f"Querying local {backend_label} ({VLLM_MODEL_NAME} on Grace Blackwell GB10) with structured schema `ExtractedAgreement`...",
-    )
-    extracted = await extract_s106_obligations_vllm(
-        blocks=blocks, planning_reference=planning_reference
-    )
-    await asyncio.sleep(0.45)
+    if blocks:
+        yield _make_event(
+            "vllm_extractor",
+            "STARTED",
+            f"Querying local {backend_label} ({VLLM_MODEL_NAME} on DGX Spark, num_ctx=8192, think=false) with schema `ExtractedAgreement`...",
+        )
+        extracted = await extract_s106_obligations_vllm(
+            blocks=blocks, planning_reference=planning_reference
+        )
+        yield _make_event(
+            "vllm_extractor",
+            "COMPLETED",
+            f"Extracted {len(extracted.obligations)} S106 obligations via {VLLM_MODEL_NAME} (status={extracted.extraction_status}).",
+            payload={
+                "obligations_count": len(extracted.obligations),
+                "extraction_status": extracted.extraction_status,
+                "source": "live_llm",
+            },
+        )
+    else:
+        yield _make_event(
+            "vllm_extractor",
+            "STARTED",
+            f"Loading structured `ExtractedAgreement` covenants for {planning_reference} (model configured: {VLLM_MODEL_NAME})...",
+        )
+        extracted = await extract_s106_obligations_vllm(
+            blocks=None, planning_reference=planning_reference
+        )
+        await asyncio.sleep(0.25)
+        yield _make_event(
+            "vllm_extractor",
+            "COMPLETED",
+            f"Loaded {len(extracted.obligations)} pre-extracted S106 obligations from seed records (attach a PDF deed to run live {VLLM_MODEL_NAME} extraction).",
+            payload={
+                "obligations_count": len(extracted.obligations),
+                "extraction_status": extracted.extraction_status,
+                "source": "seed_records",
+            },
+        )
 
-    yield _make_event(
-        "vllm_extractor",
-        "COMPLETED",
-        f"Extracted {len(extracted.obligations)} structured S106 obligations with trigger thresholds and indexation clauses.",
-        payload={"obligations_count": len(extracted.obligations)},
-    )
-    await asyncio.sleep(0.35)
+    await asyncio.sleep(0.25)
 
     yield _make_event(
         "sql_indexation_auditor",
@@ -161,7 +203,7 @@ async def stream_audit_workflow(
         "Executing deterministic PostgreSQL ONS (RPI/CPI) & BCIS Tender Price Indexation math...",
     )
     report = run_deterministic_audit(planning_reference)
-    await asyncio.sleep(0.45)
+    await asyncio.sleep(0.35)
 
     breaches = [
         d
@@ -177,7 +219,7 @@ async def stream_audit_workflow(
             "breach_count": len(breaches),
         },
     )
-    await asyncio.sleep(0.35)
+    await asyncio.sleep(0.25)
 
     yield _make_event(
         "postgis_spatial_checker",
@@ -185,14 +227,14 @@ async def stream_audit_workflow(
         f"Cross-referencing {report.ward_name} Ward PostGIS polygons & Council Tax occupation telemetry ({report.dwellings_occupied}/{report.dwellings_permitted} dwellings occupied)...",
     )
     wards = get_sheffield_ward_summaries()
-    await asyncio.sleep(0.35)
+    await asyncio.sleep(0.25)
 
     yield _make_event(
         "postgis_spatial_checker",
         "COMPLETED",
         f"Updated PostGIS ward ledger across {len(wards)} Sheffield electoral wards.",
     )
-    await asyncio.sleep(0.25)
+    await asyncio.sleep(0.2)
 
     yield _make_event(
         "report_synthesizer",

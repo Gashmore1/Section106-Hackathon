@@ -48,12 +48,20 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Seed the Sheffield S106 Database
+### 3. Open SSH Tunnel to DGX Spark Ollama (`nemotron-3.5-lightning:30b`)
 ```bash
-python -m data.seed_db
+ssh -N -o ExitOnForwardFailure=yes \
+  -L 127.0.0.1:11435:127.0.0.1:11434 \
+  USER@SPARK_ADDRESS
 ```
 
-### 4. Start the FastAPI Backend & Dashboard
+### 4. Seed the Sheffield S106 Database & Run 5-Input Benchmark
+```bash
+python -m data.seed_db
+python -m scripts.test_five_inputs
+```
+
+### 5. Start the FastAPI Backend & Dashboard
 ```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 ```

@@ -139,7 +139,7 @@ class ExtractedAgreement(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     planning_reference: str = Field(
-        ..., description="Sheffield planning application reference, e.g. '21/04512/FUL'"
+        ..., description="Sheffield planning application reference, e.g. '21/04512/FUL' or 'UNKNOWN'"
     )
     agreement_date: date = Field(..., description="Date the S106 deed was executed")
     site_name: str = Field(..., description="Development site name / address")
@@ -147,6 +147,22 @@ class ExtractedAgreement(BaseModel):
     developer_name: str = Field(..., description="Lead developer / obligor legal entity")
     total_dwellings_permitted: int = Field(
         default=0, ge=0, description="Total residential units permitted on site"
+    )
+    extraction_status: Literal[
+        "EXTRACTED",
+        "AMBIGUOUS_REQUIRES_REVIEW",
+        "INSUFFICIENT_EVIDENCE_ABSTAIN",
+    ] = Field(
+        default="EXTRACTED",
+        description=(
+            "EXTRACTED when obligations are clear; AMBIGUOUS_REQUIRES_REVIEW when clauses "
+            "contain conflicting sums/triggers; INSUFFICIENT_EVIDENCE_ABSTAIN ('I don't know') "
+            "when the input is not an S106 obligation clause or lacks sufficient information."
+        ),
+    )
+    abstention_or_ambiguity_reason: Optional[str] = Field(
+        default=None,
+        description="Explanation when extraction_status is AMBIGUOUS_REQUIRES_REVIEW or INSUFFICIENT_EVIDENCE_ABSTAIN",
     )
     obligations: list[ExtractedObligation] = Field(
         default_factory=list, description="List of extracted developer obligations"

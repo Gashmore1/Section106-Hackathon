@@ -74,12 +74,23 @@ def find_quote_bbox(
     return None
 
 
-def format_blocks_for_llm(blocks: list[ParsedTextBlock]) -> str:
-    """Format parsed PyMuPDF blocks with page and coordinate tags for vLLM input."""
+def format_blocks_for_llm(
+    blocks: list[ParsedTextBlock], max_chars: int = 18000
+) -> str:
+    """
+    Format parsed PyMuPDF blocks with page and coordinate tags for local LLM input.
+    Truncates cleanly at `max_chars` (~4,500 tokens) to stay well within the DGX Spark
+    8,192-token context window limit (leaving room for system prompt + JSON schema + output).
+    """
     lines: list[str] = []
+    running_chars = 0
     for blk in blocks:
         b = blk.bbox
-        lines.append(
+        entry = (
             f"[Page {blk.page_number} | BBox ({b.x0}, {b.y0}, {b.x1}, {b.y1})] {blk.text}"
         )
+        if running_chars + len(entry) > max_chars:
+            break
+        lines.append(entry)
+        running_chars += len(entry) + 2
     return "\n\n".join(lines)
