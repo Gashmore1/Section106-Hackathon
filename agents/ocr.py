@@ -136,6 +136,26 @@ def ocr_available() -> bool:
     return ocr_backend() is not None
 
 
+# (document path, page number, dpi) -> lines. OCR dominates the cost of reading a
+# scanned deed, and the ingest reads each document twice: once as continuous page
+# text for the definitions and indexation clauses, once as scored blocks.
+_OCR_PAGE_CACHE: dict[tuple, list["OcrLine"]] = {}
+
+
+def ocr_document_text(pdf_path: Any) -> str:
+    """Continuous page text for a whole document, OCR'ing only the image-only pages."""
+    import pymupdf as fitz
+
+    pages: list[str] = []
+    with fitz.open(str(pdf_path)) as doc:
+        for page in doc:
+            text = page.get_text()
+            if not text.strip() and needs_ocr(page):
+                text = "\n".join(line.text for line in ocr_page(page))
+            pages.append(text)
+    return "\n".join(pages)
+
+
 def needs_ocr(page: Any) -> bool:
     """True when a page has no text layer but does have page images."""
     if page.get_text().strip():
@@ -147,11 +167,19 @@ def ocr_page(page: Any, dpi: int = OCR_DPI) -> list[OcrLine]:
     """
     OCR one PDF page into lines with bounding boxes scaled back to page points, so
     the evidence viewer can still highlight the legal source of an OCR'd figure.
+
+    Results are cached per page: the ingest reads a deed as continuous page text
+    and again as scored blocks, and OCR is far too slow to do either twice.
     """
     engine = ocr_backend()
     if engine is None:
         return []
     import pymupdf as fitz
+
+    key = (getattr(page, "parent", None) and page.parent.name, page.number, dpi)
+    cached = _OCR_PAGE_CACHE.get(key)
+    if cached is not None:
+        return cached
 
     zoom = dpi / 72.0
     pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), colorspace=fitz.csGRAY)
@@ -177,6 +205,7 @@ def ocr_page(page: Any, dpi: int = OCR_DPI) -> list[OcrLine]:
                 confidence=confidence,
             )
         )
+    _OCR_PAGE_CACHE[key] = lines
     return lines
 
 

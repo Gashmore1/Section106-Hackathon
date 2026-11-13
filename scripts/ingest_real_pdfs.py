@@ -42,6 +42,7 @@ from agents.extractor import (
 )
 from agents.pdf_parser import format_blocks_for_llm, parse_s106_pdf
 from agents.prompts import S106_EXTRACTION_SYSTEM_PROMPT, S106_EXTRACTION_USER_TEMPLATE
+from data.geo import point_in_ring, resolve_ward
 from data.sql_tools import compute_indexed_obligation, persist_extracted_agreement
 from shared.schemas import (
     ExtractedAgreement,
@@ -50,8 +51,31 @@ from shared.schemas import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-REAL_PDF_DIR = REPO_ROOT / "data" / "fixtures" / "pdfs" / "real"
+CORPUS_DIRS = {
+    "real": REPO_ROOT / "data" / "fixtures" / "pdfs" / "real",
+    "sheffield": REPO_ROOT / "data" / "fixtures" / "pdfs" / "sheffield",
+}
+REAL_PDF_DIR = CORPUS_DIRS["real"]
 PROVENANCE_FILE = REAL_PDF_DIR / "provenance.json"
+
+
+def use_corpus(name: str) -> None:
+    """
+    Point the ingest at one of the deed corpora before its manifest is read. Both
+    corpora use the same provenance schema: `real` is the hand-curated set,
+    `sheffield` is the register harvest enriched by
+    scripts/enrich_sheffield_manifest.py.
+    """
+    global REAL_PDF_DIR, PROVENANCE_FILE
+    if name not in CORPUS_DIRS:
+        raise SystemExit(f"unknown corpus {name!r}; choose from {sorted(CORPUS_DIRS)}")
+    REAL_PDF_DIR = CORPUS_DIRS[name]
+    PROVENANCE_FILE = REAL_PDF_DIR / "provenance.json"
+    if not PROVENANCE_FILE.exists():
+        raise SystemExit(
+            f"{PROVENANCE_FILE} does not exist. For the register corpus, run "
+            f"`python -m scripts.enrich_sheffield_manifest` first."
+        )
 WARDS_BOUNDARY_FILE = REPO_ROOT / "data" / "fixtures" / "spatial" / "sheffield_28_wards_ons_boundaries.geojson"
 
 DEFAULT_AUTHORITY = "Sheffield City Council"
@@ -105,38 +129,9 @@ def load_provenance() -> list[dict[str, Any]]:
 
 
 def _point_in_ring(point: tuple[float, float], ring: list[list[float]]) -> bool:
-    """Ray-casting test; ring is a list of [lon, lat] pairs."""
-    x, y = point
-    inside = False
-    j = len(ring) - 1
-    for i in range(len(ring)):
-        xi, yi = ring[i]
-        xj, yj = ring[j]
-        if ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / (yj - yi) + xi):
-            inside = not inside
-        j = i
-    return inside
-
-
-def resolve_ward(lat: Optional[float], lon: Optional[float]) -> Optional[str]:
-    """
-    Resolve a ward deterministically from site coordinates against the real ONS
-    ward boundary layer, so attribution comes from geography rather than a guess.
-    """
-    if lat is None or lon is None or not WARDS_BOUNDARY_FILE.exists():
-        return None
-    point = (lon, lat)
-    for feature in json.loads(WARDS_BOUNDARY_FILE.read_text())["features"]:
-        geom = feature.get("geometry") or {}
-        rings: list[list[list[float]]] = []
-        if geom.get("type") == "Polygon":
-            rings = list(geom.get("coordinates") or [])
-        elif geom.get("type") == "MultiPolygon":
-            rings = [poly[0] for poly in geom.get("coordinates") or [] if poly]
-        if any(_point_in_ring(point, ring) for ring in rings):
-            props = feature.get("properties") or {}
-            return props.get("WD13NM") or props.get("WD22NM")
-    return None
+    """Kept as an alias: ward geometry lives in `data.geo` so provenance tooling can
+    resolve a ward without importing this pipeline."""
+    return point_in_ring(point, ring)
 
 
 DEFINED_SUM_RE = re.compile(
@@ -206,8 +201,16 @@ def pdf_page_text(pdf_path: Path) -> str:
     """
     Whole-document page text. The block view splits quoted defined terms away from
     the words that define them, so definition and indexation parsing must run on the
-    continuous page text instead.
+    continuous page text instead. Scanned pages are OCR'd locally; a document with
+    no text layer and no OCR engine available yields nothing, and the deed is
+    reported as unreadable rather than silently audited as empty.
     """
+    from agents.ocr import ocr_available
+
+    if ocr_available():
+        from agents.ocr import ocr_document_text
+
+        return ocr_document_text(pdf_path)
     import pymupdf
 
     with pymupdf.open(pdf_path) as doc:
@@ -643,6 +646,8 @@ async def main() -> None:
         help="ingest every deed in the manifest, including other councils' deeds",
     )
     parser.add_argument("--only", default=None, help="substring filter on planning reference")
+    parser.add_argument("--corpus", default="real", choices=sorted(CORPUS_DIRS),
+                        help="which deed corpus to ingest (default: real)")
     parser.add_argument("--limit", type=int, default=None, help="stop after N deeds")
     parser.add_argument(
         "--dry-run",
@@ -650,6 +655,7 @@ async def main() -> None:
         help="extract and report, but write nothing to PostgreSQL",
     )
     args = parser.parse_args()
+    use_corpus(args.corpus)
 
     entries = load_provenance()
     if not args.all_authorities:
