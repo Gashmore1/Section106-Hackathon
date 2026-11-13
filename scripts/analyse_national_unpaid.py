@@ -121,6 +121,14 @@ def analyse() -> dict[str, Any]:
 
     received_by_ref = {ref: max(stages.values()) for ref, stages in stage_sums.items()}
 
+    # A single bulk payment is often linked to every contribution it covers, so the
+    # same large `received` figure appears against several small obligations
+    # (COV-07332/3333/334 each show £477,382 received against commitments of
+    # £13,745, £16,364 and £21,818). A contribution cannot receive more than it
+    # committed, so receipts are capped at the commitment. Without this, two
+    # authorities came out with a negative amount owed.
+    over_attributed = 0
+
     # --- contributions --------------------------------------------------------
     per_entity: dict[str, dict[str, Any]] = defaultdict(
         lambda: {
@@ -144,6 +152,7 @@ def analyse() -> dict[str, Any]:
         "rows_without_amount": 0,
         "committed_gbp": 0.0,
         "received_gbp": 0.0,
+        "received_uncapped_gbp": 0.0,
         "shortfall_gbp": 0.0,
         "never_received_contributions": 0,
         "never_received_gbp": 0.0,
@@ -156,18 +165,25 @@ def analyse() -> dict[str, Any]:
         ref = (row.get("reference") or "").strip()
         amount = parse_amount(row.get("amount", ""))
         purpose = (row.get("contribution-purpose") or "unspecified").strip() or "unspecified"
-        received = received_by_ref.get(ref, 0.0)
+        raw_received = received_by_ref.get(ref, 0.0)
 
         entity_row = per_entity[entity]
         entity_row["contributions"] += 1
 
-        if amount is None:
+        if amount is None or amount <= 0.0:
             # No committed amount means this row cannot take part in a
-            # committed-versus-received total. Its receipts are left out rather
-            # than allowed to make the arithmetic tie by accident.
+            # committed-versus-received total. Treating a zero as a real
+            # commitment would also make every receipt against it look unpaid.
             totals["rows_without_amount"] += 1
             continue
         totals["rows_with_amount"] += 1
+        totals["received_uncapped_gbp"] += raw_received
+
+        # Cap receipts at the commitment: a bulk payment linked to several
+        # obligations would otherwise be counted in full against each of them.
+        received = min(raw_received, amount)
+        if raw_received > amount + 0.005:
+            over_attributed += 1
         totals["committed_gbp"] += amount
         totals["received_gbp"] += received
         entity_row["committed_gbp"] += amount
@@ -227,12 +243,20 @@ def analyse() -> dict[str, Any]:
 
     committed_total = round(totals["committed_gbp"], 2)
     received_total = round(totals["received_gbp"], 2)
+    received_uncapped = round(totals["received_uncapped_gbp"], 2)
     headline = {
         "publishing_authorities": len(per_entity),
         "priced_contributions": totals["rows_with_amount"],
         "committed_gbp": committed_total,
         "received_gbp": received_total,
+        # Two defensible readings of the same messy data, reported as a range
+        # rather than quietly picking the bigger one. A council that publishes one
+        # bulk payment linked to every obligation it covers makes the upper bound
+        # too high; counting that payment in full against each obligation makes the
+        # lower bound too low. The truth is between them.
         "not_collected_gbp": round(committed_total - received_total, 2),
+        "received_uncapped_gbp": received_uncapped,
+        "not_collected_uncapped_gbp": round(committed_total - received_uncapped, 2),
         "secured_no_receipt_count": totals["secured_no_receipt_contributions"],
         "secured_no_receipt_gbp": round(totals["secured_no_receipt_gbp"], 2),
         "never_received_count": totals["never_received_contributions"],
@@ -284,6 +308,7 @@ def analyse() -> dict[str, Any]:
             },
             "developer-agreement.csv": {"rows": len(agreements), "sha256": sha256(AGREEMENTS_CSV)},
             "malformed_transactions_skipped": malformed_transactions,
+            "receipts_capped_at_commitment": over_attributed,
             "authority_names": NAMES_FILE.name if NAMES_FILE.exists() else "not available",
         },
         "headline": headline,

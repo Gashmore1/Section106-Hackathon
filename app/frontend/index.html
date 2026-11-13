@@ -847,11 +847,17 @@
       const src = d.sources || {};
       const contribSource = src["developer-agreement-contribution.csv"] || {};
 
-      document.getElementById("ovNotCollected").textContent = fmtGBPm(h.not_collected_gbp);
-      document.getElementById("ovNotCollected").title = fmtGBP(h.not_collected_gbp);
+      const low = fmtGBPm(h.not_collected_uncapped_gbp);
+      const high = fmtGBPm(h.not_collected_gbp);
+      document.getElementById("ovNotCollected").textContent =
+        low === high ? high : `${low} – ${high}`;
+      document.getElementById("ovNotCollected").title =
+        `£${fmtGBP(h.not_collected_uncapped_gbp)} if every published receipt is counted in full, ` +
+        `£${fmtGBP(h.not_collected_gbp)} if a receipt is capped at the obligation it covers`;
       document.getElementById("ovNotCollectedNote").textContent =
-        "committed under published agreements with no payment recorded. Some of it is not " +
-        "legally due yet — much triggers on occupation of a later dwelling — but none of it has arrived.";
+        "The range depends on how bulk payments are attributed: some councils publish one " +
+        "receipt against every obligation it covers. Some of this is not legally due yet — " +
+        "much triggers on occupation of a later dwelling — but none of it has arrived.";
 
       document.getElementById("ovSecured").textContent = fmtGBPm(h.secured_no_receipt_gbp);
       document.getElementById("ovSecured").title = fmtGBP(h.secured_no_receipt_gbp);
